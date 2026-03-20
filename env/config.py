@@ -228,7 +228,7 @@ MOVE_CROSS_SUBNET_COST = 2    # 2 timesteps blind
 # These are computed from the rolling window at the agent's current node.
 NUM_TRAFFIC_FEATURES = 13
 
-# Feature indices (for readability when building observation vectors)
+# Feature indices
 FEAT_TOTAL_FLOWS = 0
 FEAT_TOTAL_CONN_ATTEMPTS = 1
 FEAT_FAILED_CONN_RATE = 2
@@ -240,7 +240,7 @@ FEAT_SYN_ACK_RATIO = 7
 FEAT_BYTES_SENT = 8
 FEAT_BYTES_RECEIVED = 9
 FEAT_SENT_RECV_RATIO = 10
-FEAT_IDC = 11
+FEAT_FANO = 11
 FEAT_DECAY_SUSPICIOUS = 12
 
 # Global features:
@@ -317,7 +317,7 @@ NORM_UNIQUE_DEST_IPS = 18.0       # Can't exceed total hosts
 NORM_UNIQUE_DEST_PORTS = 10.0
 NORM_ENTROPY = 3.0                # ln(18) ≈ 2.89, so 3.0 covers it
 NORM_BYTES = 100000.0
-NORM_IDC = 10.0
+NORM_FANO = 10.0
 NORM_SUSPICIOUS = 20.0
 
 
