@@ -193,22 +193,23 @@ NORMAL_PORTS = [80, 443, 445, 8080]
 
 NUM_ACTIONS = 11
 
-# Action IDs — these are the integers the policy network outputs.
+# Action IDs
 ACTION_OBSERVE = 0            # Stay and watch. Free, no effect.
-ACTION_MOVE_WITHIN = 1        # Move to another node in same subnet. 1 step blind.
+ACTION_MOVE_WITHIN_SUBNET = 1 # Move to another node in same subnet. 1 step blind.
 ACTION_MOVE_TO_SUBNET_0 = 2   # Move to Sales
 ACTION_MOVE_TO_SUBNET_1 = 3   # Move to Accounting
 ACTION_MOVE_TO_SUBNET_2 = 4   # Move to Back Desks
 ACTION_MOVE_TO_SUBNET_3 = 5   # Move to Management
 ACTION_MOVE_TO_SUBNET_4 = 6   # Move to Conference
 ACTION_MOVE_TO_SUBNET_5 = 7   # Move to Server Closet
-ACTION_BLOCK = 8              # Block host's cross-subnet traffic (iptables DROP)
+ACTION_BLOCK = 8              # Block host's cross-subnet traffic (iptables DROP) -> any packet the host tries to send over the 
+                              # router to another subnet will be silently deleted without any alerts.
 ACTION_QUARANTINE = 9         # Block ALL traffic to/from host (full isolation)
 ACTION_UNBLOCK = 10           # Remove all firewall rules for this host
 
-# Movement costs (in timesteps of being blind — can't observe or act)
-MOVE_WITHIN_COST = 1          # 1 timestep blind (walking to next desk)
-MOVE_CROSS_COST = 2           # 2 timesteps blind (running across office)
+# Movement costs (in timesteps of being blind. Being blind implies -> agent can't observe or act)
+MOVE_WITHIN_SUBNET_COST = 1   # 1 timestep blind
+MOVE_CROSS_SUBNET_COST = 2    # 2 timesteps blind
 
 
 # =============================================================================
