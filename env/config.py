@@ -319,10 +319,8 @@ NORM_SUSPICIOUS = 20.0
 
 
 # =============================================================================
-# PPO HYPERPARAMETERS (used later in training)
+# PPO HYPERPARAMETERS
 # =============================================================================
-# These are the same standard PPO values from the papers we studied.
-# They're here so everything is in one place.
 
 PPO_LEARNING_RATE_ACTOR = 3e-4
 PPO_LEARNING_RATE_CRITIC = 1e-3
