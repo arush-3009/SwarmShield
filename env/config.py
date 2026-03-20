@@ -123,21 +123,24 @@ OBSERVATION_WINDOW = 10
 # =============================================================================
 # ATTACKER CONFIGURATION
 # =============================================================================
-# The botnet is automated (not learned). It follows the C2 lifecycle:
-# Phase 1 — Beaconing: infected hosts periodically "phone home" to the
-#           command-and-control server. Small, periodic, same destination.
-# Phase 2 — Scanning: infected hosts probe neighbors to find new targets.
+
+# The botnet is automated. It follows the C2 lifecycle:
+
+# Phase 1 -> Beaconing: infected hosts periodically "phone home" to the
+#           command-and-control C2 server. Small, periodic, same destination.
+# Phase 2 -> Scanning: infected hosts probe neighbors to find new targets.
 #           Many connection attempts, most fail, many unique destinations.
-# Phase 3 — Infection: successful scans lead to new infections.
-# Phase 4 — Attack: once enough hosts are infected, the botnet attacks
+# Phase 3 -> Infection: successful scans lead to new infections.
+# Phase 4 -> Attack: once enough hosts are infected, the botnet attacks
 #           the file server to steal data.
 
-# Beaconing parameters
+# Beaconing parameters:
 # In real botnets, the beacon interval isn't perfectly regular — the malware
-# adds random "jitter" to its timing so that security tools can't detect
-# the perfect periodicity. Our beacons happen every BASE ± JITTER timesteps.
+# adds random jitter to its timing so that security tools can't detect
+# the perfect periodicity. Here, beacons happen every BASE ± JITTER timesteps.
+# Also, beacons use port 443 to try to pose as regular https traffic.
 BEACON_INTERVAL_BASE = 3          # Average timesteps between beacons
-BEACON_JITTER = 1                 # Random variation: ±1 timestep
+BEACON_JITTER = 1                 # Random variation/jitter: ±1 timestep
 BEACON_BYTES = (100, 300)         # Payload size range (small, consistent)
 BEACON_PORT = 443                 # Port used (disguised as HTTPS)
 
@@ -145,9 +148,8 @@ BEACON_PORT = 443                 # Port used (disguised as HTTPS)
 # Scanning starts after a host has been infected for a few timesteps.
 # The zombie probes other hosts with connection attempts. Most fail.
 SCAN_DELAY = 3                    # Timesteps after infection before scanning begins
-SCAN_PROBES_PER_STEP = (2, 5)    # How many hosts to probe per timestep (range)
-SCAN_SAME_SUBNET_PROB = 0.7      # 70% chance each probe targets same subnet
-                                  # (remaining 30% targets cross-subnet)
+SCAN_PROBES_PER_STEP = (2, 5)    # Range of how many hosts to probe per timestep
+SCAN_SAME_SUBNET_PROB = 0.7      # 70% chance each probe targets same subnet (remaining 30% targets cross-subnet i.e. over the router)
 
 # Attack parameters
 # The botnet launches its attack on the server once enough hosts are infected.
