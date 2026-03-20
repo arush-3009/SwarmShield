@@ -89,18 +89,18 @@ SERVER_HOST_ID = 17
 # VULNERABILITY SCORES
 # =============================================================================
 # When the botnet tries to infect a computer, it doesn't always succeed.
-# Each computer has a "vulnerability score" — the probability that an
-# infection attempt works. This models real-world differences:
-# - Some machines have outdated software (high vulnerability)
-# - Some are well-patched by IT (low vulnerability)
-# - The server is hardened but not invincible
+# Each computer has a "vulnerability score" -> the probability that an infection attempt works. 
+# This models real-world behavious and scenarios:
+#   - Some machines have outdated software (high vulnerability).
+#   - Some are well-patched by IT (low vulnerability).
+#   - The server is hardened, often maintained very well, but not invincible.
 #
-# IMPORTANT: These are randomized at the START of each episode.
-# The agent never sees these numbers directly — it must detect infections
-# from observing traffic patterns, not from knowing who's vulnerable.
+# These are randomized at the start of each episode.
+# The agent never sees these numbers directly, it detects infections
+# from observing traffic patterns, not from knowing who's vulnerable / more susceptible to be infected.
 
-VULN_RANGE_REGULAR = (0.2, 0.7)   # Regular hosts: random in this range
-VULN_RANGE_SERVER = (0.05, 0.15)  # Server: always hard to infect
+VULN_RANGE_REGULAR = (0.2, 0.7)   # Regular hosts: random in this range -> easier to infect than server
+VULN_RANGE_SERVER = (0.05, 0.15)  # Server: random in this range -> always hard to infect
 
 
 # =============================================================================
