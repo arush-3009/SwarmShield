@@ -59,9 +59,9 @@ class Host:
     Represents one computer on the network.
 
     Each host has:
-    - An ID (0-17) and a human-readable name (Jim, Dwight, etc.)
-    - A subnet it belongs to (which department it's in)
-    - A vulnerability score (how likely an infection attempt succeeds)
+    - An ID (0-17) and a human-readable name (e.g. Jim, Dwight, etc.)
+    - A subnet it belongs to.
+    - A vulnerability score.
     - An infection status (clean, infected, blocked, quarantined)
     - Tracking variables for the attacker's behavior (beacon timer, etc.)
     """
@@ -87,26 +87,23 @@ class Host:
         """
         Reset this host to a clean state for a new episode.
 
-        Args:
-            rng: numpy random generator for reproducible randomness.
-                 We pass this in so that episodes can be reproduced
-                 by setting the same random seed.
+        rng: numpy random generator
         """
         # Randomize vulnerability score.
         # Regular hosts: between 0.2 and 0.7 (some easy, some hard to infect).
         # Server: between 0.05 and 0.15 (always hard, but exact value varies).
-        # The agent never sees this number — it must detect infections
-        # from traffic behavior, not from pre-knowledge.
+        # The agent never sees this number, it must detect infections from traffic behavior.
         if self.is_server:
             low, high = VULN_RANGE_SERVER
         else:
             low, high = VULN_RANGE_REGULAR
+            
         self.vulnerability = rng.uniform(low, high)
 
         # Start clean and operational
         self.status = STATUS_CLEAN
 
-        # -1 means "never been infected"
+        # -1 -> "never been infected"
         self.timestep_infected = -1
 
         # Beacon timer: countdown to next beacon.
@@ -133,7 +130,7 @@ class Host:
         Block this host's cross-subnet traffic.
         The host can still communicate within its subnet but cannot
         reach other departments or the server through the router.
-        This is like: iptables -A FORWARD -s <host_ip> -j DROP
+        Basically, configuring the firewall rule -> iptables -A FORWARD -s <host_ip> -j DROP
         """
         self.status = STATUS_BLOCKED
 
@@ -141,7 +138,7 @@ class Host:
         """
         Fully isolate this host from the network.
         No traffic in or out. Complete shutdown of network access.
-        This is the nuclear option — most effective if the host is
+        This is the nuclear option —> most effective if the host is
         infected, most damaging if it's clean.
         """
         self.status = STATUS_QUARANTINED
