@@ -206,7 +206,7 @@ class Network:
     """
 
     def __init__(self):
-        """Create all hosts."""
+        """Create all hosts"""
         self.hosts = []
         for host_id in range(NUM_HOSTS):
             host = Host(host_id)
@@ -215,23 +215,17 @@ class Network:
     def reset(self, rng):
         """
         Reset all hosts for a new episode.
-
-        Args:
-            rng: numpy random generator for reproducible randomness.
         """
         for host in self.hosts:
             host.reset(rng)
 
     def get_host(self, host_id):
-        """Get a host by its ID (0-17)."""
+        """Get a host by its ID -> (0-17)"""
         return self.hosts[host_id]
 
     def get_subnet_hosts(self, subnet_id):
         """
-        Get all hosts in a given subnet.
-
-        Returns a list of Host objects.
-        Example: get_subnet_hosts(0) returns [Jim, Dwight, Stanley, Phyllis, Andy]
+        Get a list of all hosts in a given subnet.
         """
         host_ids = SUBNET_HOSTS[subnet_id]
         result = []
@@ -241,10 +235,7 @@ class Network:
 
     def get_hosts_in_same_subnet(self, host_id):
         """
-        Get all OTHER hosts in the same subnet as the given host.
-
-        If host_id is Jim (0), returns [Dwight(1), Stanley(2), Phyllis(3), Andy(4)].
-        Does NOT include the host itself.
+        Get all other hosts in the same subnet as the given host -> does not include the host itself.
         """
         subnet_id = HOST_TO_SUBNET[host_id]
         result = []
@@ -263,16 +254,16 @@ class Network:
         """
         my_subnet = HOST_TO_SUBNET[host_id]
         result = []
-        for other_host in self.hosts:
-            if HOST_TO_SUBNET[other_host.host_id] != my_subnet:
-                result.append(other_host)
+        for host in self.hosts:
+            if HOST_TO_SUBNET[host.host_id] != my_subnet:
+                result.append(host)
         return result
 
     def get_infected_hosts(self):
         """
-        Get all currently infected (and not blocked/quarantined) hosts.
+        Get all currently infected hosts that have not been blocked or quarantined.
 
-        These are the actively dangerous hosts — they're infected and
+        These are the actively dangerous hosts, they're infected and
         still have network access, so they can beacon, scan, and attack.
         """
         result = []
@@ -283,11 +274,9 @@ class Network:
 
     def get_all_infected_including_contained(self):
         """
-        Get all hosts that have been infected, including those that are
-        now blocked or quarantined.
+        Get all hosts that have been infected, including those that are now blocked or quarantined.
 
-        Used for checking win conditions: if every infected host (including
-        contained ones) is quarantined, the defenders have won.
+        If every infected host (including contained ones) is quarantined, the defenders have won.
         """
         result = []
         for host in self.hosts:
@@ -297,13 +286,12 @@ class Network:
 
     def count_by_status(self):
         """
-        Count hosts in each status. Used for reward computation and
-        episode termination checks.
+        Count hosts in each status. Used for reward computation and episode termination checks.
 
         Returns a dictionary:
         {
             'clean': int,          # Clean AND unblocked
-            'infected': int,       # Infected AND unblocked (dangerous!)
+            'infected': int,       # Infected AND unblocked
             'blocked': int,        # Blocked (could be clean or infected)
             'quarantined': int,    # Quarantined (could be clean or infected)
             'clean_blocked': int,  # Clean hosts that are blocked (false positive)
@@ -322,20 +310,18 @@ class Network:
         for host in self.hosts:
             if host.status == STATUS_CLEAN:
                 counts['clean'] += 1
-
             elif host.status == STATUS_INFECTED:
                 counts['infected'] += 1
-
             elif host.status == STATUS_BLOCKED:
                 counts['blocked'] += 1
-                # Was this host actually infected before being blocked?
-                if host.timestep_infected < 0:
-                    # Never been infected — this is a false positive
+        
+                if host.timestep_infected < 0: # -> host was never infected
                     counts['clean_blocked'] += 1
-
+                    
             elif host.status == STATUS_QUARANTINED:
                 counts['quarantined'] += 1
-                if host.timestep_infected < 0:
+                if host.timestep_infected < 0: # -> host was never infected
+                    
                     counts['clean_quarantined'] += 1
 
         return counts
@@ -344,13 +330,11 @@ class Network:
         """
         Check if the file server has been compromised.
 
-        The server doesn't fall instantly. Attack traffic accumulates
-        "damage" over time. If total damage exceeds the threshold,
-        the server is compromised and the attackers win.
-
-        Args:
-            server_damage: float, accumulated damage so far
-            threshold: float, damage needed for compromise
+        The server doesn't fall instantly -> attack traffic accumulates "damage" over 
+        time. If total damage exceeds the threshold, the server is compromised and the attackers win.
+        
+        server_damage: float, accumulated damage so far
+        threshold: float, damage needed for compromise
         """
         return server_damage >= threshold
 
@@ -358,19 +342,19 @@ class Network:
         """
         Check if every infected host is either blocked or quarantined.
 
-        This is the DEFENDER WIN condition. Note: it's not enough to
-        quarantine some infected hosts — ALL of them must be contained.
+        This is the win condition for the agents. 
+        
+        It's not enough to quarantine some infected hosts. All of them must be contained.
         If even one infected host remains free, it can keep spreading.
         """
         for host in self.hosts:
-            # If a host has ever been infected and is currently
-            # in INFECTED status (not blocked/quarantined), containment fails
             if host.is_infected:
                 return False
 
-        # Also check: are there ANY infected hosts at all?
-        # If nobody was ever infected and agents just quarantined random
-        # clean hosts, that's not a "win"
+        # Check if there are any infected hosts at all -> if nobody 
+        # was ever infected and agents just quarantined random
+        # clean hosts, then that is not a win and in fact, gets 
+        # negative reward if they are never unblocked.
         infected_ever = self.get_all_infected_including_contained()
         if len(infected_ever) == 0:
             return False
@@ -378,7 +362,7 @@ class Network:
         return True
 
     def __str__(self):
-        """Pretty print the network state (for debugging)."""
+        """Pretty print the network state"""
         lines = []
         for subnet_id in range(NUM_SUBNETS):
             subnet_name = SUBNET_NAMES[subnet_id]
