@@ -168,10 +168,9 @@ SERVER_DAMAGE_THRESHOLD = 100.0   # Total damage needed to compromise server
 # =============================================================================
 # NORMAL TRAFFIC GENERATION
 # =============================================================================
-# Every clean, unblocked host generates fake "normal" traffic each timestep.
+# Every clean, unblocked host generates simulated "normal" traffic each timestep.
 # This is the background noise that the botnet hides in.
-# Without this, detection would be trivially easy — any traffic at all would
-# be suspicious. The agent must learn to distinguish normal from malicious.
+# The agent learns to distinguish normal traffic and activity from malicious.
 
 NORMAL_FLOWS_PER_STEP = (1, 4)    # How many connections each host makes per step
 NORMAL_BYTES_RANGE = (200, 5000)  # Bytes per normal connection
