@@ -115,12 +115,8 @@ VULN_RANGE_SERVER = (0.05, 0.15)  # Server: random in this range -> always hard 
 MAX_TIMESTEPS = 200               # Maximum steps per episode
 INITIAL_INFECTIONS = 2            # How many hosts start infected (never the server)
 
-# Rolling observation window: traffic features are computed over the last N
-# timesteps, not just the current one. This gives enough data points to
-# compute meaningful statistics like entropy and IDC.
-# Why 10: with beaconing every 2-3 timesteps, a 10-step window captures
-# 3-5 beacons — enough to see the pattern. Shorter windows miss the signal.
-# Longer windows waste early-episode time being blind.
+# Rolling observation window: traffic features are computed over the last N timesteps, not just the 
+# current one. This gives enough data points to compute meaningful statistics like entropy and the fano factor -> variance / mean.
 OBSERVATION_WINDOW = 10
 
 
