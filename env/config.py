@@ -277,14 +277,14 @@ REWARD_AGENT_OVERLAP = -2.0      # Per pair of agents at the same node
 # One-time event rewards
 REWARD_CORRECT_QUARANTINE = 50.0  # Quarantine an actually infected host
 REWARD_CORRECT_BLOCK = 20.0      # Block an actually infected host
-REWARD_FALSE_QUARANTINE = -40.0   # Quarantine a clean host (big mistake)
+REWARD_FALSE_QUARANTINE = -40.0   # Quarantine a clean host
 REWARD_FALSE_BLOCK = -15.0       # Block a clean host
 REWARD_CORRECT_UNBLOCK = 10.0    # Unblock a host that was falsely blocked
 REWARD_BAD_UNBLOCK = -5.0        # Unblock a host that was correctly blocked
 
 # Movement costs
-REWARD_MOVE_WITHIN = -0.5        # Small cost for within-subnet move
-REWARD_MOVE_CROSS = -1.0         # Bigger cost for cross-subnet move
+REWARD_MOVE_WITHIN_SUBNET = -0.5        # Small cost for within-subnet move
+REWARD_MOVE_CROSS_SUBNET = -1.0         # Bigger cost for cross-subnet move
 
 # Episode-ending rewards
 REWARD_SERVER_COMPROMISED = -200.0    # Catastrophic failure
