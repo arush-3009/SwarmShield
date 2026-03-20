@@ -46,6 +46,7 @@ from env.config import (
     NORM_SUSPICIOUS,
     NUM_TRAFFIC_FEATURES,
 )
+from env.network import Network, Host
 
 
 class TrafficRecord:
@@ -86,7 +87,7 @@ class TrafficManager:
 
     This class:
     1. Maintains a rolling window of traffic records for each host.
-    2. Generates normal (legitimate) traffic for clean hosts each timestep.
+    2. Generates normal/unmalicious traffic for clean hosts each timestep.
     3. Provides methods for the attacker to add malicious traffic records.
     4. Computes the 13-feature observation vector for any host on demand.
     5. Tracks a decayed cumulative suspicious-activity score per host.
@@ -96,12 +97,12 @@ class TrafficManager:
         """
         Initialize traffic storage for all hosts.
 
-        traffic_history[host_id] is a list of TrafficRecord objects.
-        We keep only the last OBSERVATION_WINDOW timesteps of records.
+        traffic_history[host_id] -> list of TrafficRecord objects.
+            - We keep only the last OBSERVATION_WINDOW timesteps of records.
 
-        suspicious_scores[host_id] is the decayed cumulative suspicious
-        activity score. It accumulates over the entire episode (not just
-        the window) and old events gradually fade via exponential decay.
+        suspicious_scores[host_id] -> decayed cumulative suspicious activity score. 
+            - It accumulates over the entire episode (not just
+            the window) => old events gradually fade via exponential decay.
         """
         # Per-host list of traffic records within the rolling window
         self.traffic_history = {}
@@ -109,25 +110,23 @@ class TrafficManager:
             self.traffic_history[host_id] = []
 
         # Per-host decayed suspicious activity score
-        # This is the "long-term memory" feature — it remembers that a
-        # host was suspicious even after the rolling window has moved past.
         self.suspicious_scores = {}
         for host_id in range(NUM_HOSTS):
             self.suspicious_scores[host_id] = 0.0
 
     def reset(self):
-        """Clear all traffic history for a new episode."""
+        """Clear all traffic history for a new episode"""
         for host_id in range(NUM_HOSTS):
             self.traffic_history[host_id] = []
             self.suspicious_scores[host_id] = 0.0
 
-    def add_record(self, record):
+    def add_record(self, record: TrafficRecord):
         """
         Add a traffic record to a host's history.
 
-        The record is added to the SOURCE host's history, because the
+        The record is added to the host's history, because the
         agent observes traffic at the host it's standing at, and we
-        care about what traffic this host is GENERATING (sending out).
+        care about what traffic this host is generating i.e., sending out.
 
         Also updates the suspicious activity score if the traffic is malicious.
         """
@@ -135,23 +134,17 @@ class TrafficManager:
         self.traffic_history[host_id].append(record)
 
         # If this is malicious traffic, bump the suspicious score.
-        # The score uses exponential decay — old events fade over time.
-        # We add 1.0 for each malicious connection.
         if record.is_malicious:
             self.suspicious_scores[host_id] += 1.0
 
     def prune_old_records(self, current_timestep):
         """
         Remove traffic records that are older than the rolling window.
-
-        We keep records from the last OBSERVATION_WINDOW timesteps.
-        Everything older gets deleted. This keeps memory usage constant
-        and ensures features reflect recent activity, not ancient history.
         """
         cutoff = current_timestep - OBSERVATION_WINDOW
 
         for host_id in range(NUM_HOSTS):
-            # Keep only records with timestamp > cutoff
+            
             fresh_records = []
             for record in self.traffic_history[host_id]:
                 if record.timestamp > cutoff:
@@ -163,122 +156,98 @@ class TrafficManager:
         Apply exponential decay to all suspicious activity scores.
 
         Called once per timestep. Each step, every host's suspicious score
-        is multiplied by the decay factor (0.995). This means:
-        - After 10 steps: score retains 95% (barely faded)
-        - After 100 steps: score retains 61% (noticeably faded)
-        - After 500 steps: score retains 8% (mostly gone)
-
-        This gives agents a "long-term memory" of suspicious behavior that
-        naturally fades, so hosts that were suspicious long ago don't
-        permanently look bad.
+        is multiplied by the decay factor.
         """
         for host_id in range(NUM_HOSTS):
             self.suspicious_scores[host_id] *= SUSPICIOUS_DECAY_FACTOR
 
     def generate_normal_traffic(self, network, current_timestep, rng):
-        """
-        Generate normal (legitimate) traffic for all clean, operational hosts.
-
-        Each clean, non-quarantined host makes 1-4 random connections per timestep.
-        Destinations are chosen to mimic real office behavior:
-        - 50% to coworkers in the same department (same subnet)
-        - 30% to the file server (accessing shared files)
-        - 20% to other departments (cross-subnet)
-
-        All normal connections succeed (no failed connections).
-        Bytes are random within a realistic range.
-        Ports are chosen from common office services (HTTP, HTTPS, SMB, etc.).
-
-        This creates the "background noise" that malicious traffic hides in.
-        Without this, any traffic at all would be suspicious and detection
-        would be trivially easy.
-
-        Args:
-            network: Network object with current host states
-            current_timestep: int, current simulation timestep
-            rng: numpy random generator
-        """
         for host_id in range(NUM_HOSTS):
             host = network.get_host(host_id)
 
-            # Skip hosts that can't generate traffic
-            # Quarantined hosts are fully offline — no traffic at all.
-            # Blocked hosts CAN still generate within-subnet traffic.
             if host.is_quarantined:
                 continue
 
-            # Decide how many connections this host makes this timestep.
-            # Random between 1 and 4, mimicking variable human activity.
             num_flows = rng.integers(
                 NORMAL_FLOWS_PER_STEP[0],
                 NORMAL_FLOWS_PER_STEP[1] + 1
             )
 
             for _ in range(num_flows):
-                # Pick a destination based on probability distribution.
-                # This models real office behavior: mostly local traffic,
-                # some file server access, occasional cross-department.
                 roll = rng.random()
+                dest_id = None
+                connection_succeeds = True
 
                 if roll < NORMAL_SAME_SUBNET_PROB:
-                    # Same subnet — talking to a coworker
+                    # attempting connection within same subnet
                     same_subnet_hosts = network.get_hosts_in_same_subnet(host_id)
-                    # Filter to only operational hosts
-                    reachable = []
-                    for h in same_subnet_hosts:
-                        if h.is_operational:
-                            reachable.append(h)
-                    if len(reachable) == 0:
-                        continue  # Nobody to talk to in this subnet
-                    target = rng.choice(reachable)
+                    if len(same_subnet_hosts) == 0:
+                        continue
+                    target = rng.choice(same_subnet_hosts)
                     dest_id = target.host_id
+
+                    # Host doesn't know destination's status, it just tries.
+                    # Within same subnet:
+                    #   - Quarantined dest: completely offline, no response, fails
+                    #   - Blocked dest: can still communicate within subnet, succeeds
+                    #   - Clean/infected dest: succeeds
+                    dest_host = network.get_host(dest_id)
+                    if dest_host.is_quarantined:
+                        connection_succeeds = False
 
                 elif roll < NORMAL_SAME_SUBNET_PROB + NORMAL_SERVER_PROB:
-                    # File server — accessing shared files
-                    server = network.get_host(SERVER_HOST_ID)
-                    if not server.is_operational:
-                        continue  # Server is down
-                    # If host is blocked, it can't reach the server (cross-subnet)
+                    # attempting connection with file server -> via router as file server is in a separate subnet from every other host.
+                    # If this host is blocked, it can't send cross-subnet at all
                     if host.is_blocked:
                         continue
+                    
                     dest_id = SERVER_HOST_ID
 
-                else:
-                    # Cross-subnet — talking to another department
+                    # Server might be quarantined or blocked
+                    server = network.get_host(SERVER_HOST_ID)
+                    if server.is_quarantined or server.is_blocked:
+                        connection_succeeds = False
+
+                else: # Cross-subnet —> attempting connection with another host in another subnet over the router.
+                    
                     if host.is_blocked:
-                        continue  # Blocked hosts can't go cross-subnet
-                    cross_hosts = network.get_hosts_in_different_subnets(host_id)
-                    reachable = []
-                    for h in cross_hosts:
-                        if h.is_operational:
-                            reachable.append(h)
-                    if len(reachable) == 0:
                         continue
-                    target = rng.choice(reachable)
+                    
+                    cross_hosts = network.get_hosts_in_different_subnets(host_id)
+                    if len(cross_hosts) == 0:
+                        continue
+                    
+                    target = rng.choice(cross_hosts)
                     dest_id = target.host_id
 
-                # Generate random bytes and pick a random normal port
-                bytes_sent = rng.integers(
-                    NORMAL_BYTES_RANGE[0],
-                    NORMAL_BYTES_RANGE[1] + 1
-                )
-                # Normal traffic has a response — you send a request, you get data back.
-                # Received bytes are typically larger than sent (you request a file,
-                # you get the file back — more data coming in than going out).
-                bytes_received = rng.integers(
-                    bytes_sent,
-                    bytes_sent * 3 + 1
-                )
+                    # Host doesn't know destination's status, it just tries.
+                    # Cross-subnet:
+                    #   - Quarantined dest: offline, fails
+                    #   - Blocked dest: response gets dropped at router, fails
+                    dest_host = network.get_host(dest_id)
+                    if dest_host.is_quarantined or dest_host.is_blocked:
+                        connection_succeeds = False
+                        
+
+                if connection_succeeds:
+                    bytes_sent = rng.integers(
+                        NORMAL_BYTES_RANGE[0],
+                        NORMAL_BYTES_RANGE[1] + 1
+                    )
+                    bytes_received = rng.integers(bytes_sent, bytes_sent * 3 + 1)
+                else:
+                    bytes_sent = rng.integers(40, 80)  # Just a SYN packet
+                    bytes_received = 0
+
                 dest_port = rng.choice(NORMAL_PORTS)
 
-                # Create the traffic record
                 record = TrafficRecord(
                     source_id=host_id,
                     dest_id=dest_id,
                     dest_port=dest_port,
                     bytes_sent=bytes_sent,
                     bytes_received=bytes_received,
-                    success=True,           # Normal connections always succeed
+                    success=connection_succeeds,
                     timestamp=current_timestep,
                     is_malicious=False,
                 )
@@ -288,24 +257,24 @@ class TrafficManager:
         """
         Compute the 13-feature observation vector for a given host.
 
-        This is what the RL agent "sees" when it stands at this host.
+        This is what the RL agent sees/gets when it stands at this host.
         All features are computed from the traffic records in the rolling
         window and normalized to approximately [0, 1] range.
 
         The 13 features are:
-         0: Total flows (connections) in the window
-         1: Total connection attempts (including failed ones)
-         2: Failed connection rate (fraction of attempts that failed)
-         3: Unique destination IPs contacted
-         4: Unique destination ports targeted
-         5: Entropy of destination IPs (diversity of who this host talks to)
-         6: Entropy of inter-arrival times (regularity of connection timing)
-         7: SYN-to-ACK ratio (proxy: attempt-to-success ratio)
-         8: Bytes sent in window
-         9: Bytes received in window
-        10: Sent/received byte ratio
-        11: Fano factor of packets per timestep (burstiness measure)
-        12: Decayed cumulative suspicious activity score
+        0: Total flows (connections) in the window
+        1: Total connection attempts (including failed ones)
+        2: Failed connection rate (fraction of attempts that failed)
+        3: Unique destination IPs contacted
+        4: Unique destination ports targeted
+        5: Entropy of destination IPs (diversity of who this host talks to)
+        6: Entropy of inter-arrival times (regularity of connection timing)
+        7: SYN-to-ACK ratio (proxy: attempt-to-success ratio)
+        8: Bytes sent in window
+        9: Bytes received in window
+        10:Sent/received byte ratio
+        11:Fano factor of packets per timestep (burstiness measure)
+        12:Decayed cumulative suspicious activity score
 
         Args:
             host_id: int, which host to compute features for (0-17)
