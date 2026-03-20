@@ -299,9 +299,6 @@ REWARD_SURVIVED = 50.0                # Survived full episode, server safe
 
 # Decay factor for cumulative suspicious activity score.
 # Applied as: score = score * (DECAY_FACTOR ^ timesteps_elapsed) + new_events
-# At 0.995: after 10 timesteps, old score retains 0.995^10 = 0.95 (5% fade)
-#           after 100 timesteps, 0.995^100 = 0.61 (39% fade)
-#           after 500 timesteps, 0.995^500 = 0.08 (92% fade)
 SUSPICIOUS_DECAY_FACTOR = 0.995
 
 # Small epsilon to avoid division by zero in ratios and entropy
@@ -309,7 +306,7 @@ EPSILON = 1e-8
 
 # Normalization constants for observation features.
 # These scale raw values to approximately [0, 1] range so the neural
-# network can process them easily. We pick values that represent
+# network can process them easily. The picked values represent
 # "roughly the maximum expected value" for each feature.
 NORM_TOTAL_FLOWS = 50.0
 NORM_CONN_ATTEMPTS = 50.0
