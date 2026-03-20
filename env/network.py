@@ -147,15 +147,14 @@ class Host:
         """
         Remove all firewall rules for this host.
         Restores full network access.
-        If the host was infected, it goes back to INFECTED status
-        (still compromised, just no longer blocked).
+        If the host was infected, it goes back to INFECTED status -> still compromised, just no longer blocked, negative reward for agent.
         If the host was clean and falsely blocked, it goes back to CLEAN.
         """
         # If the host was infected before being blocked/quarantined,
         # unblocking restores it to infected (the malware is still there).
         # If it was clean, it goes back to clean.
         if self.timestep_infected >= 0:
-            self.status = STATUS_INFECTED
+            self.status = STATUS_INFECTED # -> only when a host gets infected at some point does self.timestep_infected != -1
         else:
             self.status = STATUS_CLEAN
 
@@ -177,7 +176,7 @@ class Host:
 
     @property
     def is_operational(self):
-        """Can this host send and receive traffic?"""
+        """Host is operational -> this host can send and receive traffic"""
         # Quarantined hosts are fully offline.
         # Blocked hosts can still communicate within their subnet.
         # Clean and infected hosts are fully operational.
@@ -185,7 +184,7 @@ class Host:
 
     @property
     def can_send_cross_subnet(self):
-        """Can this host send traffic to other subnets?"""
+        """Host can operate cross subnet -> this host can send traffic to other subnets"""
         # Only clean and infected hosts can send cross-subnet.
         # Blocked hosts have their cross-subnet traffic dropped by the router.
         # Quarantined hosts can't send anything.
