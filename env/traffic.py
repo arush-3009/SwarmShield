@@ -43,7 +43,9 @@ from env.config import (
     NORM_ENTROPY,
     NORM_BYTES,
     NORM_FANO,
-    NORM_SUSPICIOUS,
+    NORM_FAILED_CONNS,
+    NORM_UNIQUE_DESTS,
+    NORM_CROSS_SUBNET,
     NUM_TRAFFIC_FEATURES,
 )
 
@@ -108,16 +110,35 @@ class TrafficManager:
         for host_id in range(NUM_HOSTS):
             self.traffic_history[host_id] = []
 
-        # Per-host decayed suspicious activity score
-        self.suspicious_scores = {}
+        # Per-host decayed cumulative failed connection count
+        self.failed_conn_scores = {}
         for host_id in range(NUM_HOSTS):
-            self.suspicious_scores[host_id] = 0.0
+            self.failed_conn_scores[host_id] = 0.0
 
+        # Per-host decayed cumulative unique destination count
+        self.unique_dest_scores = {}
+        for host_id in range(NUM_HOSTS):
+            self.unique_dest_scores[host_id] = 0.0
+
+        # Per-host set of all destinations ever contacted in this episode
+        self.all_time_dests = {}
+        for host_id in range(NUM_HOSTS):
+            self.all_time_dests[host_id] = set()
+
+        # Per-host decayed cumulative cross-subnet connection attempts
+        self.cross_subnet_scores = {}
+        for host_id in range(NUM_HOSTS):
+            self.cross_subnet_scores[host_id] = 0.0
+            
+            
     def reset(self):
         """Clear all traffic history for a new episode"""
         for host_id in range(NUM_HOSTS):
             self.traffic_history[host_id] = []
-            self.suspicious_scores[host_id] = 0.0
+            self.failed_conn_scores[host_id] = 0.0
+            self.unique_dest_scores[host_id] = 0.0
+            self.all_time_dests[host_id] = set()
+            self.cross_subnet_scores[host_id] = 0.0
 
     def add_record(self, record: TrafficRecord):
         """
@@ -132,9 +153,26 @@ class TrafficManager:
         host_id = record.source_id
         self.traffic_history[host_id].append(record)
 
-        # If this is malicious traffic, bump the suspicious score.
-        if record.is_malicious:
-            self.suspicious_scores[host_id] += 1.0
+        # Track failed connections (observable: count RST/timeout responses)
+        if not record.success:
+            self.failed_conn_scores[host_id] += 1.0
+
+
+        # Track new unique destinations (observable: count unique dest IPs)
+        if record.dest_id not in self.all_time_dests[host_id]:
+            self.all_time_dests[host_id].add(record.dest_id)
+            self.unique_dest_scores[host_id] += 1.0
+
+        # Track cross-subnet connection attempts (observable: count packets
+        # crossing the router's FORWARD chain in iptables)
+        source_subnet = HOST_TO_SUBNET[host_id]
+        if record.dest_id >= 0:
+            dest_subnet = HOST_TO_SUBNET[record.dest_id]
+            if source_subnet != dest_subnet:
+                self.cross_subnet_scores[host_id] += 1.0
+        else:
+            # dest_id = -1 means external C2 server, which is always cross-subnet
+            self.cross_subnet_scores[host_id] += 1.0
 
     def prune_old_records(self, current_timestep):
         """
@@ -150,15 +188,17 @@ class TrafficManager:
                     fresh_records.append(record)
             self.traffic_history[host_id] = fresh_records
 
-    def decay_suspicious_scores(self):
+    def decay_long_term_scores(self):
         """
-        Apply exponential decay to all suspicious activity scores.
+        Apply exponential decay to all long-term tracking scores.
 
-        Called once per timestep. Each step, every host's suspicious score
-        is multiplied by the decay factor.
+        Called once per timestep. Each step, scores are multiplied
+        by the decay factor so old activity gradually fades.
         """
         for host_id in range(NUM_HOSTS):
-            self.suspicious_scores[host_id] *= SUSPICIOUS_DECAY_FACTOR
+            self.failed_conn_scores[host_id] *= SUSPICIOUS_DECAY_FACTOR
+            self.unique_dest_scores[host_id] *= SUSPICIOUS_DECAY_FACTOR
+            self.cross_subnet_scores[host_id] *= SUSPICIOUS_DECAY_FACTOR
 
     def generate_normal_traffic(self, network, current_timestep, rng):
         for host_id in range(NUM_HOSTS):
@@ -304,9 +344,10 @@ class TrafficManager:
 
         # If no traffic records exist yet, i.e. early in episode -> return zeros.
         if len(records) == 0:
-            
-            # include decayed suspicious score even with no current traffic
-            features[12] = self.suspicious_scores[host_id] / NORM_SUSPICIOUS
+            # Include long-term scores even with no current traffic
+            features[12] = self.failed_conn_scores[host_id] / NORM_FAILED_CONNS
+            features[13] = self.unique_dest_scores[host_id] / NORM_UNIQUE_DESTS
+            features[14] = self.cross_subnet_scores[host_id] / NORM_CROSS_SUBNET
             return features
 
         # =====================================================================
@@ -441,15 +482,30 @@ class TrafficManager:
         features[11] = self._compute_fano_factor(records) / NORM_FANO
 
         # =====================================================================
-        # Feature 12: Decayed cumulative suspicious activity score
+        # Feature 12: Decayed cumulative failed connections
         # =====================================================================
-        # This is the long-term memory that the rolling window can't provide.
-        # It accumulates over the entire episode. Each malicious connection
-        # adds 1.0 to the score. Each timestep, the score is multiplied by
-        # 0.995.
-        #
+        # Long-term memory of connection failures. Normal hosts rarely fail.
+        # Scanning hosts fail constantly. Persists beyond the rolling window.
+        # Observable in real networking: count RST/timeout responses.
+        features[12] = self.failed_conn_scores[host_id] / NORM_FAILED_CONNS
 
-        features[12] = self.suspicious_scores[host_id] / NORM_SUSPICIOUS
+        # =====================================================================
+        # Feature 13: Decayed cumulative unique destinations
+        # =====================================================================
+        # Long-term memory of how many different hosts this machine contacted.
+        # Normal hosts talk to the same 3-5 coworkers repeatedly.
+        # Scanning hosts hit dozens of unique targets over time.
+        # Observable in real networking: count unique destination IPs.
+        features[13] = self.unique_dest_scores[host_id] / NORM_UNIQUE_DESTS
+
+        # =====================================================================
+        # Feature 14: Decayed cumulative cross-subnet connection attempts
+        # =====================================================================
+        # Long-term memory of how often this host tried to reach other subnets.
+        # Normal hosts occasionally access other departments (~20% of traffic).
+        # Scanning hosts doing cross-subnet probes accumulate much higher counts.
+        # Observable in real networking: count packets in iptables FORWARD chain.
+        features[14] = self.cross_subnet_scores[host_id] / NORM_CROSS_SUBNET
 
         # Clip all features to [0, 1] range to be safe.
         # Some features could theoretically exceed their normalization constant
