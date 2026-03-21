@@ -202,16 +202,30 @@ class Attacker:
                     target = rng.choice(targets)
 
                     # Skip if target already infected
-                    if target.timestep_infected >= 0:
-                        # Still generates a connection record (the scanner doesn't
-                        # know the target is already infected until it connects)
+                    if target.timestep_infected >= 0 or target.is_blocked:
+                        # Scanner doesn't know the target's status until it connects.
+                        # Still generates a connection record, but no infection attempt.
+                        # Whether the connection succeeds depends on subnet:
+                        #   - Same subnet: blocked hosts respond within subnet, succeeds
+                        #   - Cross subnet to blocked target: response dropped at router, fails
+                        #   - Already-infected target: always reachable (source is INFECTED = can send cross-subnet)
+                        same_subnet_check = (HOST_TO_SUBNET[host.host_id] == HOST_TO_SUBNET[target.host_id])
+
+                        if target.is_blocked and not same_subnet_check:
+                            # Cross-subnet probe to blocked target — response dropped at router
+                            probe_success = False
+                            probe_bytes_recv = 0
+                        else:
+                            probe_success = True
+                            probe_bytes_recv = rng.integers(40, 80)
+
                         record = TrafficRecord(
                             source_id=host.host_id,
                             dest_id=target.host_id,
                             dest_port=rng.integers(1, 1024),
                             bytes_sent=rng.integers(40, 80),
-                            bytes_received=rng.integers(40, 80),
-                            success=True,
+                            bytes_received=probe_bytes_recv,
+                            success=probe_success,
                             timestamp=current_timestep,
                             is_malicious=True,
                         )
@@ -227,6 +241,9 @@ class Attacker:
                         probe_reaches = False
                     elif not same_subnet and not host.can_send_cross_subnet:
                         # Source is blocked, cross-subnet probe gets dropped at router
+                        probe_reaches = False
+                    elif not same_subnet and target.is_blocked:
+                        # Target is blocked, cross-subnet response gets dropped at router
                         probe_reaches = False
                     else:
                         probe_reaches = True
@@ -349,12 +366,17 @@ class Attacker:
 
                     attack_succeeds = True  # Host already checked can_send_cross_subnet
 
+                    # If server is blocked, its outbound responses get dropped
+                    # at the router. Attack traffic still arrives (damage still
+                    # accumulates) but server can't send data back.
+                    server_can_respond = server.can_send_cross_subnet
+
                     record = TrafficRecord(
                         source_id=host.host_id,
                         dest_id=SERVER_HOST_ID,
                         dest_port=443,
                         bytes_sent=attack_bytes,
-                        bytes_received=rng.integers(50, 200) if attack_succeeds else 0,
+                        bytes_received=rng.integers(50, 200) if server_can_respond else 0,
                         success=attack_succeeds,
                         timestamp=current_timestep,
                         is_malicious=True,

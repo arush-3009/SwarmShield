@@ -46,7 +46,6 @@ from env.config import (
     NORM_SUSPICIOUS,
     NUM_TRAFFIC_FEATURES,
 )
-from env.network import Network, Host
 
 
 class TrafficRecord:
@@ -196,22 +195,35 @@ class TrafficManager:
                         connection_succeeds = False
 
                 elif roll < NORMAL_SAME_SUBNET_PROB + NORMAL_SERVER_PROB:
-                    # attempting connection with file server -> via router as file server is in a separate subnet from every other host.
-                    # If this host is blocked, it can't send cross-subnet at all
-                    if host.is_blocked:
-                        continue
                     
-                    dest_id = SERVER_HOST_ID
+                    # If this host IS the server, it can't connect to itself.
+                    # Redirect to a random cross-subnet host instead.
+                    
+                    if host_id == SERVER_HOST_ID:
+                        cross_hosts = network.get_hosts_in_different_subnets(host_id)
+                        
+                        if len(cross_hosts) == 0:
+                            continue
+                        
+                        target = rng.choice(cross_hosts)
+                        
+                        dest_id = target.host_id
+                        dest_host = network.get_host(dest_id)
+                        
+                        if dest_host.is_quarantined or dest_host.is_blocked:
+                            connection_succeeds = False
+                            
+                    else:
+                        dest_id = SERVER_HOST_ID
 
-                    # Server might be quarantined or blocked
-                    server = network.get_host(SERVER_HOST_ID)
-                    if server.is_quarantined or server.is_blocked:
-                        connection_succeeds = False
+                        if host.is_blocked:
+                            connection_succeeds = False
+
+                        server = network.get_host(SERVER_HOST_ID)
+                        if server.is_quarantined or server.is_blocked:
+                            connection_succeeds = False
 
                 else: # Cross-subnet —> attempting connection with another host in another subnet over the router.
-                    
-                    if host.is_blocked:
-                        continue
                     
                     cross_hosts = network.get_hosts_in_different_subnets(host_id)
                     if len(cross_hosts) == 0:
@@ -219,6 +231,11 @@ class TrafficManager:
                     
                     target = rng.choice(cross_hosts)
                     dest_id = target.host_id
+
+                    # If source is blocked, router drops its outbound cross-subnet traffic.
+                    # Host doesn't know — it tries and sees a timeout.
+                    if host.is_blocked:
+                        connection_succeeds = False
 
                     # Host doesn't know destination's status, it just tries.
                     # Cross-subnet:
