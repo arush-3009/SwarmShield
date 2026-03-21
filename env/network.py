@@ -284,6 +284,16 @@ class Network:
                 result.append(host)
         return result
 
+    def get_infected_hosts_incl_blocked(self):
+        """
+        Get all those hosts that are infected even if they are blocked (but not quarantined).
+        """
+        result = []
+        for host in self.hosts:
+            if host.timestep_infected >= 0 and not host.is_quarantined:
+                result.append(host)
+        return result
+        
     def count_by_status(self):
         """
         Count hosts in each status. Used for reward computation and episode termination checks.
