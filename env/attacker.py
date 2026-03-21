@@ -100,10 +100,13 @@ class Attacker:
         """
         newly_infected = []
 
-        # Get all infected hosts that are still active (not blocked/quarantined).
-        # Blocked hosts can't send cross-subnet but CAN still do some things.
-        # Quarantined hosts can't do anything.
-        active_infected = network.get_infected_hosts()
+        # Get all infected hosts that are still active.
+        # This includes:
+        
+        # 1. those hosts that are neither blocked nor quarantined
+        # 2. those hosts that are infected and blocked as they can still do activity in local subnet.
+        
+        active_infected = network.get_infected_hosts_incl_blocked()
 
         # Count total active infected for phase transition decisions
         total_active_infected = len(active_infected)
