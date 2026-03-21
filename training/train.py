@@ -131,21 +131,19 @@ def train():
                 episode_rewards.append(current_episode_reward)
                 episode_lengths.append(current_episode_length)
 
-                # Determine outcome
-                info = infos[0]
-                if 'server_damage' in info:
-                    # Check what happened
-                    server_damage = info.get('server_damage', 0)
-                    infected_count = info.get('infected_count', 0)
 
                 if dones[0] and not truncateds[0]:
-                    # Terminated: either server compromised or all contained
-                    if current_episode_reward > 0:
-                        episode_outcomes.append('win')
-                    else:
+                    # Terminated: check termination reward to determine outcome
+                    # Positive termination_reward = all contained = win
+                    # Negative termination_reward = server compromised = loss
+                    # Use the info dict to check server damage
+                    info = infos[0]
+                    server_dmg = info.get('server_damage', 0)
+                    if server_dmg >= 500.0:  # SERVER_DAMAGE_THRESHOLD
                         episode_outcomes.append('loss')
+                    else:
+                        episode_outcomes.append('win')
                 else:
-                    # Truncated: survived full episode
                     episode_outcomes.append('survive')
 
                 episode_count += 1
