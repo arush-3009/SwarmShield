@@ -231,6 +231,21 @@ class Attacker:
                     else:
                         probe_reaches = True
 
+                    if not probe_reaches:
+                        # Probe didn't reach target — generate failed record and move on
+                        record = TrafficRecord(
+                            source_id=host.host_id,
+                            dest_id=target.host_id,
+                            dest_port=rng.integers(1, 1024),
+                            bytes_sent=rng.integers(40, 80),
+                            bytes_received=0,
+                            success=False,
+                            timestamp=current_timestep,
+                            is_malicious=True,
+                        )
+                        traffic_manager.add_record(record)
+                        continue
+                    
                     # Probe reaches the target — does the exploit succeed
                     # Success probability = target's vulnerability score.
                     # A well-patched machine (vuln=0.2) resists 80% of attacks.
