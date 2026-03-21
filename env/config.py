@@ -278,7 +278,7 @@ REWARD_AGENT_OVERLAP = -2.0      # Per pair of agents at the same node
 REWARD_CORRECT_QUARANTINE = 50.0  # Quarantine an actually infected host
 REWARD_CORRECT_BLOCK = 20.0      # Block an actually infected host
 REWARD_FALSE_QUARANTINE = -40.0   # Quarantine a clean host
-REWARD_FALSE_BLOCK = -15.0       # Block a clean host
+REWARD_FALSE_BLOCK_EVENT = -15.0       # Block a clean host
 REWARD_CORRECT_UNBLOCK = 10.0    # Unblock a host that was falsely blocked
 REWARD_BAD_UNBLOCK = -5.0        # Unblock a host that was correctly blocked
 
