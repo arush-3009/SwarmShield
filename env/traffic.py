@@ -373,18 +373,10 @@ class TrafficManager:
         # ACK packets = successful connections.
         # In our simulation -> use the ratio of total attempts to successful ones.
         
-        success_count = 0
-        for record in records:
-            if record.success:
-                success_count += 1
-        if success_count > 0:
-            features[7] = total_attempts / (success_count + EPSILON)
-        else:
+        if successful_flows > 0:
+            features[7] = total_attempts / (successful_flows + EPSILON)
             
-            features[7] = total_attempts
-        
-        features[7] = min(features[7] / 10.0, 1.0)
-
+            
         # =====================================================================
         # Feature 8: Bytes sent in rolling window
         # =====================================================================
