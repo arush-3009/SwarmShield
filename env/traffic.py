@@ -449,23 +449,12 @@ class TrafficManager:
 
     def _compute_entropy_of_destinations(self, records):
         """
-        Compute Shannon entropy of destination IP distribution.
-
-        Entropy formula: E = -sum(p_i * log(p_i))
-        where p_i is the fraction of connections going to destination i.
-
-        Example:
-        - 10 connections, all to the same IP: p = [1.0] → E = 0 (no diversity)
-        - 10 connections, each to a different IP: p = [0.1]*10 → E = 2.3 (max diversity)
-        - 10 connections, 6 to IP_A, 2 to IP_B, 2 to IP_C: p = [0.6, 0.2, 0.2] → E ≈ 1.0
-
-        Beaconing produces low entropy (one C2 destination dominates).
-        Scanning produces high entropy (many different targets).
+        Compute entropy of destination IP distribution.
         """
         if len(records) == 0:
             return 0.0
 
-        # Count how many times each destination appears
+        # how many times each destination appears
         dest_counts = defaultdict(int)
         for record in records:
             dest_counts[record.dest_id] += 1
@@ -482,19 +471,12 @@ class TrafficManager:
 
     def _compute_entropy_of_inter_arrivals(self, records):
         """
-        Compute Shannon entropy of inter-arrival time distribution.
+        Compute entropy of distribution of time intervals between consecutive connections attempts.
 
         Inter-arrival time = the gap (in timesteps) between consecutive
         connections from this host. We collect all these gaps, bin them
         into discrete categories, and compute the entropy of the bin
         distribution.
-
-        Beaconing: gaps are semi-regular (all around 2-3 timesteps).
-          Most gaps fall in the same bin → low entropy.
-        Normal: gaps are wildly variable (0, 1, 3, 0, 5, 1, ...).
-          Gaps spread across many bins → high entropy.
-
-        We use the timestep field of records as the timing signal.
         """
         if len(records) < 2:
             return 0.0
@@ -511,10 +493,7 @@ class TrafficManager:
         if len(gaps) == 0:
             return 0.0
 
-        # Bin the gaps: 0, 1, 2, 3, 4, 5+
-        # This discretization is necessary because entropy requires
-        # discrete categories. Gaps of 0 and 1 are "fast bursts",
-        # gaps of 2-3 are "regular pacing", gaps of 5+ are "long pauses".
+        # Bin the gaps
         bin_counts = defaultdict(int)
         for gap in gaps:
             if gap >= 5:
@@ -549,7 +528,7 @@ class TrafficManager:
         if len(records) == 0:
             return 0.0
 
-        # Find the range of timesteps in the records
+        # the range of timesteps in the records
         timesteps = set()
         for record in records:
             timesteps.add(record.timestamp)
