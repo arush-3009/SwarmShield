@@ -349,25 +349,19 @@ class Network:
         return server_damage >= threshold
 
     def all_infections_contained(self):
-        """
-        Check if every infected host is either blocked or quarantined.
-
-        This is the win condition for the agents. 
         
-        It's not enough to quarantine some infected hosts. All of them must be contained.
-        If even one infected host remains free, it can keep spreading.
-        """
-        for host in self.hosts:
-            if host.is_infected:
-                return False
-
-        # Check if there are any infected hosts at all -> if nobody 
-        # was ever infected and agents just quarantined random
-        # clean hosts, then that is not a win and in fact, gets 
-        # negative reward if they are never unblocked.
+        # Win condition: every host that was ever infected must be QUARANTINED.
+        # Blocking is not enough —-> blocked hosts can still scan within subnet.
+        # Only full quarantine, i.e. complete isolation, counts as containment.
+        
         infected_ever = self.get_all_infected_including_contained()
+        
         if len(infected_ever) == 0:
             return False
+
+        for host in infected_ever:
+            if not host.is_quarantined:
+                return False
 
         return True
 
