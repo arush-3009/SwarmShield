@@ -354,7 +354,7 @@ class SwarmShieldEnv(gym.Env):
         # STEP 4: Maintenance — prune old records and decay suspicious scores
         # =====================================================================
         self.traffic_manager.prune_old_records(self.current_timestep)
-        self.traffic_manager.decay_suspicious_scores()
+        self.traffic_manager.decay_long_term_scores()
 
         # =====================================================================
         # STEP 5: Check termination conditions
