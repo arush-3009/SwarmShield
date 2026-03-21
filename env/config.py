@@ -271,7 +271,7 @@ OBSERVATION_SIZE = NUM_TRAFFIC_FEATURES + NUM_GLOBAL_FEATURES  # = 71
 # Per-timestep continuous rewards (every agent, every step)
 REWARD_HEALTHY_HOST = 1.0         # Per clean, unblocked, operational host
 REWARD_UNCONTAINED_INFECTION = -3.0   # Per infected host NOT quarantined/blocked
-REWARD_FALSE_BLOCK_PER_STEP = -0.5 = -0.5        # Per clean host that IS blocked/quarantined
+REWARD_FALSE_BLOCK_PER_STEP = -0.5        # Per clean host that IS blocked/quarantined
 REWARD_AGENT_OVERLAP = -2.0      # Per pair of agents at the same node
 
 # One-time event rewards
