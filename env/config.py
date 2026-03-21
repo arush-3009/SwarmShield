@@ -154,7 +154,7 @@ SCAN_SAME_SUBNET_PROB = 0.7      # 70% chance each probe targets same subnet (re
 # Attack parameters
 # The botnet launches its attack on the server once enough hosts are infected.
 ATTACK_INFECTION_THRESHOLD = 4    # Minimum infected hosts before attack begins
-ATTACK_CONNECTIONS_PER_STEP = (10, 30)   # Connections per infected host during attack
+ATTACK_CONNECTIONS_PER_STEP = (3, 8)   # Connections per infected host during attack
 ATTACK_BYTES_PER_CONNECTION = (5000, 50000)  # Bytes per attack connection (large)
 
 # Server damage
@@ -162,7 +162,7 @@ ATTACK_BYTES_PER_CONNECTION = (5000, 50000)  # Bytes per attack connection (larg
 # "damage." If total damage exceeds the threshold, the server is compromised.
 # This gives agents a window to react even after the attack begins.
 SERVER_DAMAGE_PER_CONNECTION = 1.0
-SERVER_DAMAGE_THRESHOLD = 100.0   # Total damage needed to compromise server
+SERVER_DAMAGE_THRESHOLD = 500.0   # Total damage needed to compromise server
 
 
 # =============================================================================
