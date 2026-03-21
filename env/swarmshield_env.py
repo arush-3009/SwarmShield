@@ -317,15 +317,18 @@ class SwarmShieldEnv(gym.Env):
 
             # --- ACTION: UNBLOCK HOST ---
             elif action == ACTION_UNBLOCK:
+                
                 host = self.network.get_host(current_node)
 
                 if host.is_blocked or host.is_quarantined:
-                    # Was this a correct block (host was actually infected)?
                     was_correctly_contained = (host.timestep_infected >= 0)
                     host.unblock()
 
                     if was_correctly_contained:
-                        event_rewards[agent_idx] += REWARD_BAD_UNBLOCK
+                        # Unblocking an infected host is very bad — it's now
+                        # free to beacon, scan, and attack again.
+                        # Heavy penalty to prevent unblock/reblock farming.
+                        event_rewards[agent_idx] += REWARD_SERVER_COMPROMISED * 0.25  # -50.0
                     else:
                         event_rewards[agent_idx] += REWARD_CORRECT_UNBLOCK
 
