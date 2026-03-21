@@ -108,8 +108,12 @@ class Attacker:
         
         active_infected = network.get_infected_hosts_incl_blocked()
 
-        # Count total active infected for phase transition decisions
-        total_active_infected = len(active_infected)
+        
+        # count those hosts that can actually attack the server -> so no quarantined zombies and no blocked zombies as blocked cannot anyways reach the server as file server is in another subnet. also, agents need incentive to block, protect other subnets otherwise no point in blocking.
+        total_attackers = 0
+        for h in active_infected:
+            if h.can_send_cross_subnet:
+                total_attackers += 1
 
         for host in active_infected:
 
@@ -327,7 +331,7 @@ class Attacker:
             # If the traffic reaches the server (not blocked), it accumulates
             # damage. The server is compromised when damage exceeds the threshold.
 
-            if total_active_infected >= ATTACK_INFECTION_THRESHOLD:
+            if total_attackers >= ATTACK_INFECTION_THRESHOLD:
 
                 # see if host can reach server
                 # Server is cross-subnet from everyone, so the host needs
