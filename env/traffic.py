@@ -375,6 +375,9 @@ class TrafficManager:
         
         if successful_flows > 0:
             features[7] = total_attempts / (successful_flows + EPSILON)
+        else:
+            if total_attempts > 0:
+                features[7] = total_attempts / EPSILON  # Will clip to 1.0 anyway
             
             
         # =====================================================================
