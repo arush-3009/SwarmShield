@@ -267,39 +267,40 @@ class TrafficManager:
         2: Failed connection rate (fraction of attempts that failed)
         3: Unique destination IPs contacted
         4: Unique destination ports targeted
-        5: Entropy of destination IPs (diversity of who this host talks to)
-        6: Entropy of inter-arrival times (regularity of connection timing)
-        7: SYN-to-ACK ratio (proxy: attempt-to-success ratio)
+        5: Entropy of destination IPs
+        6: Entropy of time intervals between successive connection requests/attempts.
+        7: SYN-to-ACK ratio (proxy for -> attempt-to-success ratio)
         8: Bytes sent in window
         9: Bytes received in window
         10:Sent/received byte ratio
         11:Fano factor of packets per timestep (burstiness measure)
         12:Decayed cumulative suspicious activity score
 
-        Args:
-            host_id: int, which host to compute features for (0-17)
+        
+        host_id: int, which host to compute features for (0-17)
 
-        Returns:
-            numpy array of 13 float values, each normalized to ~[0, 1]
+    
+        returns -> numpy array of 13 float values, each normalized to ~[0, 1]
         """
         records = self.traffic_history[host_id]
         features = np.zeros(NUM_TRAFFIC_FEATURES, dtype=np.float32)
 
-        # If no traffic records exist yet (early in episode), return zeros.
-        # The agent sees "nothing happening here" which is accurate.
+        # If no traffic records exist yet, i.e. early in episode -> return zeros.
         if len(records) == 0:
-            # Still include the decayed suspicious score even with no current traffic
+            
+            # include decayed suspicious score even with no current traffic
             features[12] = self.suspicious_scores[host_id] / NORM_SUSPICIOUS
             return features
 
         # =====================================================================
-        # Feature 0: Total flows in the rolling window
+        # Feature 0: Total flows -> (so succesfull connections) -> in the rolling window
         # =====================================================================
-        # Count all connections (both successful and failed).
-        # Normal host: 10-30 over 10 timesteps.
-        # Scanning host: 50+ (lots of probes).
-        total_flows = len(records)
-        features[0] = total_flows / NORM_TOTAL_FLOWS
+        # Count successful connections.
+        successful_flows = 0
+        for record in records:
+            if record.success:
+                successful_flows += 1
+        features[0] = successful_flows / NORM_TOTAL_FLOWS
 
         # =====================================================================
         # Feature 1: Total connection attempts
@@ -312,9 +313,8 @@ class TrafficManager:
         # =====================================================================
         # Feature 2: Failed connection rate
         # =====================================================================
-        # What fraction of connections failed?
-        # Normal: near 0 (you connect to known, working destinations).
-        # Scanning: near 1 (blindly probing, most targets don't respond).
+        # fraction of connections that failed
+        
         failed_count = 0
         for record in records:
             if not record.success:
@@ -327,9 +327,8 @@ class TrafficManager:
         # =====================================================================
         # Feature 3: Unique destination IPs
         # =====================================================================
-        # How many different hosts did this machine contact?
-        # Normal: 3-6 (coworkers + server).
-        # Scanning: 15+ (probing many targets).
+        # raw number of different hosts that the machine contacted in the window
+        
         unique_dests = set()
         for record in records:
             unique_dests.add(record.dest_id)
@@ -338,9 +337,8 @@ class TrafficManager:
         # =====================================================================
         # Feature 4: Unique destination ports
         # =====================================================================
-        # How many different services did this machine target?
-        # Normal: 1-3 (HTTP, HTTPS, file sharing).
-        # Port scanning: many different ports.
+        # raw number of different services that this machine targeted
+        
         unique_ports = set()
         for record in records:
             unique_ports.add(record.dest_port)
@@ -349,31 +347,23 @@ class TrafficManager:
         # =====================================================================
         # Feature 5: Entropy of destination IPs
         # =====================================================================
-        # Entropy measures diversity/randomness of a distribution.
-        # Formula: E = -sum(p_i * log(p_i)) for each unique value i
-        # where p_i = fraction of connections going to destination i.
-        #
-        # High entropy = diverse destinations (scanning — hitting many targets).
-        # Low entropy = concentrated destinations (beaconing — always same C2 server).
+        
+        # High entropy = diverse destinations (suggests scanning —> hitting many targets).
+        # Low entropy = concentrated destinations (suggests beaconing —> always same C2 server).
         # Moderate entropy = normal behavior (a few regular destinations).
         #
-        # Why this catches beaconing: if a host makes 20 connections and 8 of
-        # them go to the same C2 IP, that IP's probability is 0.4 — much higher
-        # than any single destination in normal traffic. This concentration
-        # pulls the entropy down.
+       
         features[5] = self._compute_entropy_of_destinations(records) / NORM_ENTROPY
 
         # =====================================================================
-        # Feature 6: Entropy of inter-arrival times
+        # Feature 6: Entropy of time intervals between successive connection attempts
         # =====================================================================
-        # Inter-arrival time = gap between consecutive connections.
-        # Beaconing: gaps are semi-regular (e.g. all around 2-3 timesteps).
-        #   Even with jitter, this is MORE regular than human behavior.
-        #   Low entropy.
-        # Normal: gaps are wildly variable (0.1s, 3s, 15s, 0.5s).
-        #   High entropy.
-        #
-        # We discretize the inter-arrival times into bins to compute entropy.
+        
+        # Beaconing: gaps are semi-regular (e.g. all around 2-3 timesteps), even with jitter, this 
+        # is MORE regular than human behavior -> Low entropy.
+        
+        # Normal: gaps are wildly variable (0.1s, 3s, 15s, 0.5s) -> High entropy.
+        
         features[6] = self._compute_entropy_of_inter_arrivals(records) / NORM_ENTROPY
 
         # =====================================================================
@@ -381,11 +371,8 @@ class TrafficManager:
         # =====================================================================
         # In real networking: SYN packets = connection attempts,
         # ACK packets = successful connections.
-        # In our simulation: we use the ratio of total attempts to successful ones.
-        #
-        # Normal: ratio near 1 (almost all connections succeed).
-        # Scanning: ratio >> 1 (many attempts, few successes).
-        # SYN flood: ratio very high (all attempts, no completions).
+        # In our simulation -> use the ratio of total attempts to successful ones.
+        
         success_count = 0
         for record in records:
             if record.success:
@@ -393,17 +380,16 @@ class TrafficManager:
         if success_count > 0:
             features[7] = total_attempts / (success_count + EPSILON)
         else:
-            # All failed — maximum suspicion
+            
             features[7] = total_attempts
-        # Normalize: normal ratio is ~1, scanning might be 5-10
+        
         features[7] = min(features[7] / 10.0, 1.0)
 
         # =====================================================================
         # Feature 8: Bytes sent in rolling window
         # =====================================================================
         # Total outbound data from this host.
-        # Normal: 1000-10000 bytes over 10 timesteps.
-        # DDoS/exfiltration: 100000+ bytes (massive spike).
+       
         total_bytes_sent = 0
         for record in records:
             total_bytes_sent += record.bytes_sent
@@ -414,6 +400,7 @@ class TrafficManager:
         # =====================================================================
         # Total inbound data to this host.
         # A spike could mean receiving a malware payload during infection.
+        
         total_bytes_received = 0
         for record in records:
             total_bytes_received += record.bytes_received
@@ -422,16 +409,14 @@ class TrafficManager:
         # =====================================================================
         # Feature 10: Sent/received byte ratio
         # =====================================================================
-        # Normal browsing: you send small requests, receive large responses.
-        #   Ratio < 1 (receive more than you send).
-        # Exfiltration: you're uploading stolen data TO the C2 server.
-        #   Ratio > 1 (send more than you receive).
-        # A flip in this ratio is a strong signal that something changed.
+        # Normal browsing: you send small requests, receive large responses -> Ratio < 1 (receive more than you send).
+        # Exfiltration: you're uploading stolen data TO the C2 server -> Ratio > 1 (send more than you receive).
+        
         if total_bytes_received > 0:
             ratio = total_bytes_sent / (total_bytes_received + EPSILON)
         else:
             ratio = total_bytes_sent / (1.0 + EPSILON)
-        # Normalize: normal is ~0.3-0.5, exfiltration could be 2-5
+        
         features[10] = min(ratio / 5.0, 1.0)
 
         # =====================================================================
@@ -439,28 +424,19 @@ class TrafficManager:
         # =====================================================================
         # Fano factor = variance / mean of connection counts per timestep.
         #
-        # It measures "burstiness" — how steady or spiky the traffic is.
-        # Near 0: traffic arrives at a perfectly steady rate (beaconing —
-        #         same number of connections every timestep, like a metronome).
-        # Around 1: traffic arrives randomly (normal human behavior).
-        # Much > 1: traffic arrives in bursts (DDoS — quiet then sudden flood).
-        #
-        # We count how many connections happened in each timestep within
+        # count how many connections happened in each timestep within
         # the window, then compute variance / mean of those counts.
         features[11] = self._compute_fano_factor(records) / NORM_FANO
 
         # =====================================================================
         # Feature 12: Decayed cumulative suspicious activity score
         # =====================================================================
-        # This is the "long-term memory" that the rolling window can't provide.
+        # This is the long-term memory that the rolling window can't provide.
         # It accumulates over the entire episode. Each malicious connection
         # adds 1.0 to the score. Each timestep, the score is multiplied by
-        # 0.995 (exponential decay — old events gradually fade).
+        # 0.995.
         #
-        # A host that had suspicious activity 50 timesteps ago will have a
-        # faded but non-zero score. A host that's actively suspicious right
-        # now will have a high score. A host that's never been suspicious
-        # will have a score of 0.
+
         features[12] = self.suspicious_scores[host_id] / NORM_SUSPICIOUS
 
         # Clip all features to [0, 1] range to be safe.
