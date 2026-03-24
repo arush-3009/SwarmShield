@@ -3,20 +3,6 @@ SwarmShield Training Script
 ============================
 
 This is the main training loop for IPPO (Independent PPO).
-
-What it does each iteration:
-1. Collect PPO_HORIZON timesteps of experience by running the environment.
-2. Run one PPO update for each of the 3 agents independently.
-3. Log training statistics.
-4. Save checkpoints periodically.
-
-Checkpoint structure:
-    checkpoints/latest/  — most recent weights, used for resuming training
-    checkpoints/best/    — highest win-rate weights, used for demo/evaluation
-
-How to run:
-    cd SwarmShield-attempt2-saturday
-    python -m train.training
 """
 
 import os
