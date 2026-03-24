@@ -17,9 +17,6 @@ Checkpoint structure:
 How to run:
     cd SwarmShield-attempt2-saturday
     python -m train.training
-
-To resume from where you left off, just run the same command again.
-The script auto-detects checkpoints/latest/ and loads from there.
 """
 
 import os
