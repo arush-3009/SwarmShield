@@ -275,17 +275,14 @@ def run_random_episode(env, max_steps=12):
 def main():
     print_env_overview()
 
-    subsection("CREATING ENVIRONMENT")
+    print("CREATING ENVIRONMENT")
     env = SwarmShieldEnv(seed=42)
     print("Environment object created successfully.")
 
     run_basic_reset_test(env)
     run_simple_manual_steps(env)
     run_random_episode(env, max_steps=10)
-
-    section("ALL TESTS FINISHED")
-    print("If you reached this point without crashes, the environment is at least structurally working.")
-    print("Next, you can keep rerunning this file whenever you change env logic.")
+    print("All Tests Passed")
 
 
 if __name__ == "__main__":
