@@ -12,7 +12,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
-# Add project root to sys.path so imports work from any directory.
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
