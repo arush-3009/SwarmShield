@@ -1,8 +1,5 @@
 # SwarmShield Environment Design Specification
 
-This is the source-of-truth spec for the SwarmShield training environment.
-
-
 ## 1. Core Idea
 
 1. 18 host computers across 6 subnets in a simulated office network.
@@ -16,12 +13,12 @@ This is the source-of-truth spec for the SwarmShield training environment.
 ## 2. World Layout
 
 ```text
-Subnet 0  Sales        : Host 0 (Jim), Host 1 (Dwight), Host 2 (Stanley), Host 3 (Phyllis), Host 4 (Andy)
-Subnet 1  Accounting   : Host 5 (Angela), Host 6 (Oscar), Host 7 (Kevin)
-Subnet 2  Back Desks   : Host 8 (BackDesk1), Host 9 (BackDesk2), Host 10 (BackDesk3), Host 11 (BackDesk4)
-Subnet 3  Management   : Host 12 (Michael), Host 13 (Pam)
-Subnet 4  Conference   : Host 14 (ConfLaptop1), Host 15 (ConfLaptop2), Host 16 (ConfLaptop3)
-Subnet 5  Server Closet: Host 17 (FileServer)
+Subnet 0  Sales : Host 0 (Jim), Host 1 (Dwight), Host 2 (Stanley), Host 3 (Phyllis), Host 4 (Andy)
+Subnet 1  Accounting : Host 5 (Angela), Host 6 (Oscar), Host 7 (Kevin)
+Subnet 2  Back Desks : Host 8 (BackDesk1), Host 9 (BackDesk2), Host 10 (BackDesk3), Host 11 (BackDesk4)
+Subnet 3  Management : Host 12 (Michael), Host 13 (Pam)
+Subnet 4  Conference : Host 14 (ConfLaptop1), Host 15 (ConfLaptop2), Host 16 (ConfLaptop3)
+Subnet 5  Server Closet : Host 17 (FileServer)
 ```
 
 18 hosts total. Subnet sizes: 5, 3, 4, 2, 3, 1. File server sits alone in subnet 5.
@@ -79,7 +76,7 @@ Two independent axes per host.
 
 ### 5.4 Infection Does Not Erase Containment
 
-When a host gets infected (e.g., blocked clean host infected by same-subnet probe), `infected` becomes True but containment **does not change**. Only agent actions change containment.
+When a host gets infected (e.g., blocked clean host infected by same-subnet probe), `infected` becomes True but containment **does not change**. Only agent actions can change containment.
 
 
 ## 6. Connection Success Logic
@@ -175,7 +172,7 @@ Once `ATTACK_INFECTION_THRESHOLD = 5` active uncontained infected hosts exist, e
 - `dest_id = 17`, `dest_port = 443`.
 - `bytes_sent`: random(4000, 20000). `bytes_received`: 0.
 - `is_malicious = True`.
-- Each successful connection adds `1.0` damage. Server falls at `300.0`.
+- Each successful connection adds `1.0` damage. Server falls at `SERVER_DAMAGE_THRESHOLD`.
 
 ### 7.3 Prune Old Records
 
@@ -230,7 +227,7 @@ Only agent actions change containment.
 
 ### 11.4 Server Protection Rule
 
-Agents CAN move to host 17 and observe its traffic. Agents CANNOT contain host 17. Block, quarantine, and unblock on host 17 are no-ops: no state change, no reward, no penalty.
+Agents can move to host 17 and observe its traffic. However, agents cannot contain host 17. Block, quarantine, and unblock on host 17 are no-ops: no state change, no reward, no penalty.
 
 
 ## 12. Observation Model
@@ -308,7 +305,7 @@ In transit → action ignored.
 - `INITIAL_INFECTIONS = 1`
 
 ### 14.1 Defender Win
-Every infected host has `containment_state = QUARANTINED`. Block does NOT count — blocked infected hosts can still spread locally. At least one infection must have occurred.
+Every infected host has `containment_state = QUARANTINED`. Block does not count — blocked infected hosts can still spread locally. At least one infection must have occurred.
 
 ### 14.2 Attacker Win
 Server damage reaches 300.0.
