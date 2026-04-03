@@ -3,25 +3,6 @@ SwarmShield PPO Agent
 =====================
 
 One independent PPO agent.
-
-Each defender in IPPO gets:
-- its own Actor
-- its own Critic
-- its own optimizers
-- its own rollout buffer
-
-This class assumes the environment returns:
-- obs: numpy array of shape (OBSERVATION_SIZE,)
-- reward: float
-- done: bool
-where done should usually be:
-    terminated OR truncated
-
-Main pieces:
-1. Experience buffer
-2. GAE advantage computation
-3. PPO clipped policy update
-4. Critic regression update
 """
 
 from typing import Dict, List
