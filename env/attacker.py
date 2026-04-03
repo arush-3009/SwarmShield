@@ -7,13 +7,12 @@ The attacker is not learned. It follows a fixed script:
 1. Beaconing
    Every infected host periodically sends small messages to the external
    C2 server (dest_id = -1). The first beacon fires immediately when the
-   host is infected. After that, the beacon timer resets to random(2, 4)
-   steps.
+   host is infected. After that, the beacon timer resets.
 
 2. Scanning
    After SCAN_DELAY timesteps since infection, an infected host starts
-   scanning for new targets. It sends 3-5 probes per step, 80% within
-   its own subnet and 20% cross-subnet. The file server is never a
+   scanning for new targets. It sends a random number of probes per step, most within
+   its own subnet and some cross-subnet. The file server is never a
    scan target. If a probe reaches a clean host, infection succeeds
    with probability = target vulnerability.
 
@@ -28,8 +27,7 @@ Important:
 - ALL infected hosts attempt malicious traffic every timestep.
 - Containment determines what succeeds via network.decide_connection().
 - Failed malicious attempts still generate outgoing traffic records.
-- Newly infected hosts do NOT act again later in the same timestep.
-  They start their own lifecycle on the next timestep.
+- Newly infected hosts do not act again later in the same timestep. They start their own lifecycle on the next timestep.
 """
 
 from typing import List, Sequence
