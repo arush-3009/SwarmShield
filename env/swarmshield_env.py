@@ -301,27 +301,14 @@ class SwarmShieldEnv:
 
         return observations, rewards, terminated_list, truncated_list, infos
 
-    # -------------------------------------------------------------------------
-    # Action processing
-    # -------------------------------------------------------------------------
 
-    def _process_single_action(
-        self,
-        agent_state: AgentRuntimeState,
-        action: int,
-    ) -> Tuple[float, object, bool]:
-        """
-        Process one action for one non-transit agent.
-
-        Returns:
-        - local_event_reward: float
-        - action_result: object for info/debugging
-        - did_start_move: bool
-        """
+    def _process_single_action(self, agent_state: AgentRuntimeState, action: int) -> Tuple[float, object, bool]:
+        
+        
         if action == ACTION_OBSERVE:
             return 0.0, {"type": "observe"}, False
 
-        # Move actions: 1..18 -> host 0..17
+        
         if ACTION_MOVE_BASE <= action <= ACTION_MOVE_LAST:
             target_host = action - ACTION_MOVE_BASE
 
@@ -339,11 +326,7 @@ class SwarmShieldEnv:
                 reward = REWARD_MOVE_CROSS_SUBNET
 
             agent_state.begin_transit(target_host, travel_time)
-            return reward, {
-                "type": "move_started",
-                "target_host": target_host,
-                "travel_time": travel_time,
-            }, True
+            return reward, {"type": "move_started", "target_host": target_host, "travel_time": travel_time}, True
 
         current_host = agent_state.current_host
 
@@ -362,10 +345,8 @@ class SwarmShieldEnv:
         raise ValueError(f"Unsupported action {action}")
 
     def _event_reward_from_containment_result(self, result) -> float:
-        """
-        Translate one containment action result into the acting agent's
-        local event reward.
-        """
+
+
         if not result.changed:
             return 0.0
 
@@ -396,15 +377,10 @@ class SwarmShieldEnv:
 
         return 0.0
 
-    # -------------------------------------------------------------------------
-    # Reward computation
-    # -------------------------------------------------------------------------
-
-    def _compute_shared_reward(
-        self,
-        num_new_infections: int,
-        server_damage_delta: float,
-    ) -> float:
+    
+    def _compute_shared_reward(self, num_new_infections: int, server_damage_delta: float) -> float:
+        
+        
         counts = self.network.count_by_status()
 
         reward = 0.0
@@ -420,20 +396,13 @@ class SwarmShieldEnv:
         return float(reward)
 
     def _count_overlap_pairs(self) -> int:
-        """
-        Count overlap pairs among agents that are NOT in transit.
 
-        If 2 agents share a host -> 1 pair
-        If 3 agents share a host -> 3 pairs
-        """
         occupancy: Dict[int, int] = {}
 
         for agent_state in self.agent_states:
             if agent_state.in_transit:
                 continue
-            occupancy[agent_state.current_host] = (
-                occupancy.get(agent_state.current_host, 0) + 1
-            )
+            occupancy[agent_state.current_host] = (occupancy.get(agent_state.current_host, 0) + 1)
 
         pairs = 0
         for count in occupancy.values():
@@ -441,12 +410,15 @@ class SwarmShieldEnv:
                 pairs += (count * (count - 1)) // 2
         return pairs
 
-    # -------------------------------------------------------------------------
-    # Observation building
-    # -------------------------------------------------------------------------
-
+   
     def _build_all_observations(self) -> List[np.ndarray]:
-        return [self._build_observation_for_agent(i) for i in range(NUM_AGENTS)]
+        
+        observations = []
+        for i in range(NUM_AGENTS):
+            obs = self._build_observation_for_agent(i)
+            observations.append(obs)
+            
+        return observations
 
     def _build_observation_for_agent(self, agent_id: int) -> np.ndarray:
         """
