@@ -1,4 +1,3 @@
-"""Episode Recorder - records to JSON for offline replay"""
 import sys, os, json, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from engine import EvalEngine
