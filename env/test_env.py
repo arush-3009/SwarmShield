@@ -1,15 +1,3 @@
-"""
-Simple test file for SwarmShieldEnv.
-
-Purpose:
-- Print high-level environment information first.
-- Reset the environment and print a clear summary.
-- Run a few simple test steps.
-- Then run one short random episode and print everything in a readable way.
-
-This is meant for quick repeated sanity-checking, not for training.
-"""
-
 import random
 
 from env.config import (
@@ -30,25 +18,20 @@ from env.config import (
 from env.swarmshield_env import SwarmShieldEnv
 
 
-# -----------------------------------------------------------------------------
-# Pretty-print helpers
-# -----------------------------------------------------------------------------
-
 def line(char="=", width=80):
     print(char * width)
-
-
+    
 def section(title):
     line("=")
     print(title)
     line("=")
-
-
+    
 def subsection(title):
     print()
     line("-")
     print(title)
     line("-")
+
 
 
 def action_to_text(action):
@@ -152,25 +135,25 @@ def print_step_result(step_idx, actions, rewards, terminated, truncated, infos):
 
     print()
     print("Environment state after this step:")
-    # All agents should see same global counts, so reading from info[0] is enough
+    
     shared = infos[0]
-    print(f"- timestep                     = {shared['timestep']}")
-    print(f"- newly infected this step     = {shared['newly_infected_this_step']}")
+    print(f"- timestep = {shared['timestep']}")
+    print(f"- newly infected this step = {shared['newly_infected_this_step']}")
     print(f"- num new infections this step = {shared['num_new_infections_this_step']}")
-    print(f"- infected_total               = {shared['infected_total']}")
-    print(f"- infected_uncontained         = {shared['infected_uncontained']}")
-    print(f"- infected_blocked             = {shared['infected_blocked']}")
-    print(f"- infected_quarantined         = {shared['infected_quarantined']}")
-    print(f"- clean_total                  = {shared['clean_total']}")
-    print(f"- clean_blocked                = {shared['clean_blocked']}")
-    print(f"- clean_quarantined            = {shared['clean_quarantined']}")
-    print(f"- blocked_total                = {shared['blocked_total']}")
-    print(f"- quarantined_total            = {shared['quarantined_total']}")
-    print(f"- server_damage                = {shared['server_damage']:.2f}")
-    print(f"- server_damage_delta          = {shared['server_damage_delta']:.2f}")
-    print(f"- overlap_pairs                = {shared['overlap_pairs']}")
+    print(f"- infected_total = {shared['infected_total']}")
+    print(f"- infected_uncontained = {shared['infected_uncontained']}")
+    print(f"- infected_blocked = {shared['infected_blocked']}")
+    print(f"- infected_quarantined = {shared['infected_quarantined']}")
+    print(f"- clean_total  = {shared['clean_total']}")
+    print(f"- clean_blocked = {shared['clean_blocked']}")
+    print(f"- clean_quarantined = {shared['clean_quarantined']}")
+    print(f"- blocked_total = {shared['blocked_total']}")
+    print(f"- quarantined_total = {shared['quarantined_total']}")
+    print(f"- server_damage = {shared['server_damage']:.2f}")
+    print(f"- server_damage_delta = {shared['server_damage_delta']:.2f}")
+    print(f"- overlap_pairs  = {shared['overlap_pairs']}")
     print(f"- all_infections_quarantined   = {shared['all_infections_quarantined']}")
-    print(f"- server_compromised           = {shared['server_compromised']}")
+    print(f"- server_compromised = {shared['server_compromised']}")
 
     print()
     print("Per-agent runtime state:")
@@ -182,9 +165,6 @@ def print_step_result(step_idx, actions, rewards, terminated, truncated, infos):
               f"terminal_reward={info['terminal_reward']:.4f}")
 
 
-# -----------------------------------------------------------------------------
-# Test scenarios
-# -----------------------------------------------------------------------------
 
 def run_basic_reset_test(env):
     section("TEST 1: RESET TEST")
@@ -204,7 +184,6 @@ def run_simple_manual_steps(env):
     print("Starting from a fresh reset for manual steps.")
     print("We will do a few easy-to-read actions first.")
 
-    # Step 1: everyone observes
     actions = [ACTION_OBSERVE, ACTION_OBSERVE, ACTION_OBSERVE]
     observations, rewards, terminated, truncated, infos = env.step(actions)
     print_step_result(1, actions, rewards, terminated, truncated, infos)
@@ -212,7 +191,6 @@ def run_simple_manual_steps(env):
     if any(terminated) or any(truncated):
         return
 
-    # Step 2: move agents to different places
     actions = [
         ACTION_MOVE_BASE + 1,   # agent 0 move to host 1
         ACTION_MOVE_BASE + 6,   # agent 1 move to host 6
@@ -224,7 +202,6 @@ def run_simple_manual_steps(env):
     if any(terminated) or any(truncated):
         return
 
-    # Step 3: while some may still be in transit, ask all to observe
     actions = [ACTION_OBSERVE, ACTION_OBSERVE, ACTION_OBSERVE]
     observations, rewards, terminated, truncated, infos = env.step(actions)
     print_step_result(3, actions, rewards, terminated, truncated, infos)
@@ -232,7 +209,6 @@ def run_simple_manual_steps(env):
     if any(terminated) or any(truncated):
         return
 
-    # Step 4: try containment actions on current hosts
     actions = [ACTION_BLOCK, ACTION_QUARANTINE, ACTION_UNBLOCK]
     observations, rewards, terminated, truncated, infos = env.step(actions)
     print_step_result(4, actions, rewards, terminated, truncated, infos)
@@ -268,15 +244,12 @@ def run_random_episode(env, max_steps=12):
         print("Random episode stopped because the short test step limit was reached.")
 
 
-# -----------------------------------------------------------------------------
-# Main
-# -----------------------------------------------------------------------------
 
 def main():
     print_env_overview()
 
     print("CREATING ENVIRONMENT")
-    env = SwarmShieldEnv(seed=42)
+    env = SwarmShieldEnv(seed=11)
     print("Environment object created successfully.")
 
     run_basic_reset_test(env)
