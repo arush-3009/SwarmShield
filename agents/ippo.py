@@ -50,15 +50,11 @@ class IPPO:
     def select_actions_deterministic(self, observations: Sequence):
     
         if len(observations) != self.num_agents:
-            raise ValueError(
-                f"Expected {self.num_agents} observations, got {len(observations)}"
-            )
+            raise ValueError(f"Expected {self.num_agents} observations, got {len(observations)}")
 
         actions = []
         for agent_idx in range(self.num_agents):
-            action = self.agents[agent_idx].select_action_deterministic(
-                observations[agent_idx]
-            )
+            action = self.agents[agent_idx].select_action_deterministic(observations[agent_idx])
             actions.append(action)
         return actions
 
@@ -74,15 +70,7 @@ class IPPO:
         values: Sequence[float],
     ) -> None:
         
-        if not (
-            len(observations)
-            == len(actions)
-            == len(log_probs)
-            == len(rewards)
-            == len(dones)
-            == len(values)
-            == self.num_agents
-        ):
+        if not (len(observations) == len(actions) == len(log_probs) == len(rewards) == len(dones) == len(values) == self.num_agents):
             raise ValueError("All transition components must have length NUM_AGENTS.")
 
         for agent_idx in range(self.num_agents):
@@ -99,14 +87,10 @@ class IPPO:
     def update_all(self, last_observations: Sequence, last_dones: Sequence[bool] | None = None):
 
         if len(last_observations) != self.num_agents:
-            raise ValueError(
-                f"Expected {self.num_agents} last observations, got {len(last_observations)}"
-            )
+            raise ValueError(f"Expected {self.num_agents} last observations, got {len(last_observations)}")
 
         if last_dones is not None and len(last_dones) != self.num_agents:
-            raise ValueError(
-                f"Expected {self.num_agents} last_dones flags, got {len(last_dones)}"
-            )
+            raise ValueError(f"Expected {self.num_agents} last_dones flags, got {len(last_dones)}")
 
         all_stats: List[Dict[str, float]] = []
 
