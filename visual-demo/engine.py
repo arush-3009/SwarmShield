@@ -1,6 +1,3 @@
-"""
-SwarmShield Evaluation Engine
-"""
 import sys, os
 import numpy as np
 import torch
