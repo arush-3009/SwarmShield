@@ -1,4 +1,3 @@
-"""Seed Finder - finds dramatic demo seeds"""
 import sys, os, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from engine import EvalEngine
@@ -51,8 +50,7 @@ def main():
     print(f"\n{'='*70}\n  TOP {args.top} DEMO SEEDS\n{'='*70}")
     print(f"{'Rank':>4} {'Seed':>6} {'Outcome':>10} {'Score':>7} {'MaxInf':>7} {'MaxDmg':>7} {'Steps':>6}")
     for i, r in enumerate(results[:args.top]):
-        print(f"{i+1:>4} {r['seed']:>6} {r['outcome']:>10} {r['score']:>7.1f} "
-              f"{r['max_infected']:>7} {r['max_damage']:>7.1f} {r['steps']:>6}")
+        print(f"{i+1:>4} {r['seed']:>6} {r['outcome']:>10} {r['score']:>7.1f} {r['max_infected']:>7} {r['max_damage']:>7.1f} {r['steps']:>6}")
     print(f"\nBest seed: {results[0]['seed']}")
 
 if __name__ == '__main__':
