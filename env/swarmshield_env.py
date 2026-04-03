@@ -267,7 +267,11 @@ class SwarmShieldEnv:
         shared_reward = self._compute_shared_reward(num_new_infections=len(newly_infected), server_damage_delta=self.last_server_damage_delta)
         self.last_shared_reward = shared_reward
 
-        rewards = [float(shared_reward + local_event_rewards[i] + terminal_reward) for i in range(NUM_AGENTS)]
+        rewards = []
+        for i in range(NUM_AGENTS):
+            r = float(shared_reward + local_event_rewards[i] + terminal_reward)
+            rewards.append(r)
+    
         self.last_event_rewards = list(local_event_rewards)
 
         # update timestep
