@@ -2,8 +2,6 @@
 SwarmShield IPPO
 ================
 
-Independent PPO = one separate PPOAgent per defender.
-
 There is no:
 - parameter sharing
 - centralized critic
