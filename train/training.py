@@ -1,10 +1,3 @@
-"""
-SwarmShield Training Script
-============================
-
-This is the main training loop for IPPO (Independent PPO).
-"""
-
 import os
 import sys
 import time
@@ -30,10 +23,6 @@ from env.config import (
 
 def train():
 
-    # =========================================================================
-    # TRAINING CONFIGURATION
-    # =========================================================================
-
     TOTAL_TIMESTEPS = 3_000_000
 
     LOG_INTERVAL = 1
@@ -48,15 +37,11 @@ def train():
 
     STATS_WINDOW = 20
 
-    # Which device to train on:
+    #   device to train on
     #   0 = CUDA GPU
-    #   1 = Apple Silicon MPS
+    #   1 = Apple MPS
     #   2 = CPU
     DEVICE_TO_TRAIN_ON = 2
-
-    # =========================================================================
-    # DEVICE SELECTION
-    # =========================================================================
 
     if DEVICE_TO_TRAIN_ON == 0:
         device = torch.device("cuda")
@@ -68,16 +53,10 @@ def train():
         device = torch.device("cpu")
         print("Using CPU")
 
-    # =========================================================================
-    # CREATE ENVIRONMENT AND AGENTS
-    # =========================================================================
 
     env = SwarmShieldEnv()
     ippo = IPPO(device)
 
-    # =========================================================================
-    # RESUME FROM CHECKPOINT IF AVAILABLE
-    # =========================================================================
 
     if os.path.exists(os.path.join(LATEST_DIR, "agent_0.pt")):
         ippo.load_all(LATEST_DIR)
@@ -94,9 +73,6 @@ def train():
     print(f"Device: {device}")
     print(f"Training starting...\n")
 
-    # =========================================================================
-    # TRACKING VARIABLES
-    # =========================================================================
 
     total_steps = 0
     update_count = 0
@@ -121,23 +97,14 @@ def train():
     best_win_rate = -1.0
     best_server_damage = float("inf")
 
-    # =========================================================================
-    # RESET ENVIRONMENT
-    # =========================================================================
 
     observations, infos = env.reset()
 
-    # =========================================================================
-    # MAIN TRAINING LOOP (with Ctrl+C safety)
-    # =========================================================================
 
     try:
         while total_steps < TOTAL_TIMESTEPS:
 
-            # =================================================================
-            # COLLECT EXPERIENCE (ROLLOUT)
-            # =================================================================
-
+    
             for step in range(PPO_HORIZON):
 
                 actions, log_probs, values = ippo.select_actions(observations)
@@ -202,16 +169,12 @@ def train():
                 if total_steps >= TOTAL_TIMESTEPS:
                     break
 
-            # =================================================================
-            # PPO UPDATE
-            # =================================================================
+
 
             all_stats = ippo.update_all(observations, last_dones=last_dones)
             update_count += 1
 
-            # =================================================================
-            # LOGGING
-            # =================================================================
+            
 
             if update_count % LOG_INTERVAL == 0 and len(episode_rewards) > 0:
 
@@ -270,7 +233,7 @@ def train():
                     f"SPS {steps_per_sec:.0f}"
                 )
 
-                # ---- Check for new best ----
+                
                 is_new_best = False
                 if win_rate > best_win_rate:
                     is_new_best = True
@@ -283,9 +246,7 @@ def train():
                     ippo.save_all(BEST_DIR)
                     print(f"  -> NEW BEST saved! WR={best_win_rate:.2f} SvrDmg={best_server_damage:.0f}")
 
-            # =================================================================
-            # SAVE LATEST CHECKPOINT PERIODICALLY
-            # =================================================================
+           
 
             if update_count % SAVE_INTERVAL == 0:
                 ippo.save_all(LATEST_DIR)
@@ -294,10 +255,7 @@ def train():
     except KeyboardInterrupt:
         print("\n\nTraining interrupted by Ctrl+C.")
 
-    # =========================================================================
-    # ALWAYS SAVE ON EXIT (normal finish or Ctrl+C)
-    # =========================================================================
-
+    
     ippo.save_all(LATEST_DIR)
     print(f"\nLatest model saved to {LATEST_DIR}/")
     print(f"Best model remains in {BEST_DIR}/")
@@ -325,10 +283,7 @@ def train():
         print(f"  Win rate:        {final_wins / len(final_outcomes):.2f}")
         print(f"  Average length:  {np.mean(episode_lengths[-STATS_WINDOW:]):.1f}")
 
-    # =========================================================================
-    # TRAINING VISUALIZATION
-    # =========================================================================
-
+    
     if len(episode_rewards) > 5:
 
         fig, axes = plt.subplots(3, 2, figsize=(16, 12))
