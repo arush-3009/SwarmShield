@@ -1,4 +1,3 @@
-"""SwarmShield Visual Demo Server — RL + Mininet + Browser, all in sync"""
 import argparse, json, os, sys, threading, time, datetime, re
 from queue import Queue, Empty
 from flask import Flask, render_template, Response, request, jsonify
@@ -7,10 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from engine import EvalEngine
 
-from env.config import (
-    SUBNET_HOSTS, NUM_HOSTS, NUM_AGENTS, HOST_NAMES,
-    SERVER_DAMAGE_THRESHOLD,
-)
+from env.config import (SUBNET_HOSTS, NUM_HOSTS, HOST_NAMES)
 
 mn_net = None
 mn_hosts = {}
