@@ -29,17 +29,7 @@ class IPPO:
 
     
     def select_actions(self, observations: Sequence):
-        """
-        Select one sampled action per agent.
-
-        observations:
-            list/sequence of length NUM_AGENTS
-
-        Returns:
-            actions: list[int]
-            log_probs: list[float]
-            values: list[float]
-        """
+        
         if len(observations) != self.num_agents:
             raise ValueError(
                 f"Expected {self.num_agents} observations, got {len(observations)}"
@@ -60,9 +50,7 @@ class IPPO:
         return actions, log_probs, values
 
     def select_actions_deterministic(self, observations: Sequence):
-        """
-        Greedy action selection, useful for evaluation / demo rollouts.
-        """
+    
         if len(observations) != self.num_agents:
             raise ValueError(
                 f"Expected {self.num_agents} observations, got {len(observations)}"
@@ -87,9 +75,7 @@ class IPPO:
         dones: Sequence[bool],
         values: Sequence[float],
     ) -> None:
-        """
-        here, store one timestep for all agents.
-        """
+        
         if not (
             len(observations)
             == len(actions)
