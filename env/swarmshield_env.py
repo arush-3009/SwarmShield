@@ -543,20 +543,12 @@ class SwarmShieldEnv:
 
         for host_id in pos_list:
             if not (0 <= host_id < NUM_HOSTS):
-                raise ValueError(
-                    f"Agent start host must be in [0, {NUM_HOSTS - 1}], got {host_id}"
-                )
+                raise ValueError(f"Agent start host must be in [0, {NUM_HOSTS - 1}], got {host_id}")
 
         return tuple(pos_list)
 
-    # -------------------------------------------------------------------------
-    # Optional debug helper
-    # -------------------------------------------------------------------------
 
     def get_state_summary(self) -> Dict[str, object]:
-        """
-        Small snapshot for quick debugging / printing.
-        """
         counts = self.network.count_by_status()
         return {
             "timestep": self.current_timestep,
