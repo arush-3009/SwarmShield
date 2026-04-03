@@ -3,22 +3,19 @@
 SwarmShield RL-Driven Mininet Demo
 ====================================
 
-This is the real deal:
 1. Builds the Mininet network (18 hosts, 6 subnets)
 2. Loads trained IPPO agents from checkpoints
 3. Runs the SwarmShield environment
-4. Agents make REAL decisions using their trained policy
-5. Every block/quarantine/unblock gets applied as iptables rules
-   on the actual Mininet hosts in real time
+4. Agents make decisions using their trained policy
+5. Every block/quarantine/unblock gets applied as iptables rules on the actual Mininet hosts in real time
 
-The simulation drives the logic. Mininet mirrors the physical effects.
+Here, the simulation drives the logic while Mininet mirrors the physical effects.
 """
 
 import sys
 import os
 import time
 
-# Add the RL project to path
 sys.path.insert(0, os.path.expanduser("~/swarmshield-rl"))
 
 import torch
@@ -31,16 +28,9 @@ from mininet.node import OVSBridge
 
 from env.swarmshield_env import SwarmShieldEnv
 from agents.ippo import IPPO
-from env.config import (
-    NUM_AGENTS, NUM_HOSTS, NUM_ACTIONS,
-    ACTION_OBSERVE, ACTION_MOVE_BASE, ACTION_MOVE_LAST,
-    ACTION_BLOCK, ACTION_QUARANTINE, ACTION_UNBLOCK,
-    HOST_NAMES, SUBNET_HOSTS, SERVER_DAMAGE_THRESHOLD,
-)
-
-# =========================================================================
-# MININET TOPOLOGY
-# =========================================================================
+from env.config import (NUM_AGENTS, NUM_HOSTS, ACTION_OBSERVE, ACTION_MOVE_BASE, 
+                        ACTION_MOVE_LAST, ACTION_BLOCK, ACTION_QUARANTINE, ACTION_UNBLOCK, 
+                        HOST_NAMES, SUBNET_HOSTS, SERVER_DAMAGE_THRESHOLD)
 
 SUBNET_NAMES = [
     "Sales", "Accounting", "BackDesks",
