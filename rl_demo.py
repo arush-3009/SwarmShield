@@ -32,10 +32,9 @@ from env.config import (NUM_AGENTS, NUM_HOSTS, ACTION_OBSERVE, ACTION_MOVE_BASE,
                         ACTION_MOVE_LAST, ACTION_BLOCK, ACTION_QUARANTINE, ACTION_UNBLOCK, 
                         HOST_NAMES, SUBNET_HOSTS, SERVER_DAMAGE_THRESHOLD)
 
-SUBNET_NAMES = [
-    "Sales", "Accounting", "BackDesks",
-    "Management", "Conference", "ServerCloset",
-]
+
+
+SUBNET_NAMES = ["Sales", "Accounting", "BackDesks", "Management", "Conference", "ServerCloset",]
 
 
 class SwarmShieldTopo(Topo):
@@ -49,10 +48,6 @@ class SwarmShieldTopo(Topo):
                 h = self.addHost(f"h{host_id}", ip=ip)
                 self.addLink(h, sw)
 
-
-# =========================================================================
-# HELPERS
-# =========================================================================
 
 def action_name(action):
     if action == ACTION_OBSERVE:
@@ -95,9 +90,6 @@ def clear_all_rules(mn_hosts):
         h.cmd("iptables -F 2>/dev/null")
 
 
-# =========================================================================
-# DISPLAY
-# =========================================================================
 
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -117,7 +109,7 @@ def print_state(timestep, infos, actions, env):
     print(f"  SWARMSHIELD RL DEMO — TIMESTEP {timestep}")
     print(f"{'='*70}{RESET}\n")
 
-    # Infection status
+    # infection status
     infected_ids = env.network.get_all_infected_host_ids()
     blocked_ids = []
     quarantined_ids = []
@@ -128,7 +120,7 @@ def print_state(timestep, infos, actions, env):
         if host_obj.is_quarantined:
             quarantined_ids.append(hid)
 
-    # Network map
+    # network map
     print(f"  {BOLD}NETWORK STATUS:{RESET}")
     for subnet_id, host_ids in SUBNET_HOSTS.items():
         subnet_str = f"  {SUBNET_NAMES[subnet_id]:12s} |"
@@ -156,7 +148,7 @@ def print_state(timestep, infos, actions, env):
           f"{BLUE}[Q]=Inf+Quarantined{RESET}  "
           f"{CYAN}[B]/[Q]=FalsePositive{RESET}")
 
-    # Stats
+    # stats
     print(f"\n  {BOLD}STATS:{RESET}")
     print(f"    Infected total:       {info['infected_total']}")
     print(f"    Infected uncontained: {RED}{info['infected_uncontained']}{RESET}")
@@ -165,7 +157,7 @@ def print_state(timestep, infos, actions, env):
     print(f"    Server damage:        {info['server_damage']:.0f} / {SERVER_DAMAGE_THRESHOLD:.0f}")
     print(f"    New infections:       {info['num_new_infections_this_step']}")
 
-    # Agent actions
+    # agent actions
     print(f"\n  {BOLD}AGENT ACTIONS:{RESET}")
     for i in range(NUM_AGENTS):
         agent_info = infos[i]
@@ -177,7 +169,7 @@ def print_state(timestep, infos, actions, env):
             loc += " [IN TRANSIT]"
         print(f"    Agent {i}: at {MAGENTA}{loc}{RESET} -> {act}")
 
-    # Terminal check
+    # terminal check
     if info.get('all_infections_quarantined', False):
         print(f"\n  {BOLD}{GREEN}>>> ALL INFECTIONS QUARANTINED — DEFENDERS WIN! <<<{RESET}")
     elif info.get('server_compromised', False):
@@ -186,17 +178,12 @@ def print_state(timestep, infos, actions, env):
     print(f"\n{'='*70}")
 
 
-# =========================================================================
-# MAIN DEMO LOOP
-# =========================================================================
 
 def run_demo(seed=None, speed=0.5):
-    """
-    speed: seconds between timesteps. 0.5 = fast, 2.0 = slow for narration.
-    """
+    
     setLogLevel("warning")
 
-    # --- Build Mininet ---
+    # build Mininet
     print("Building Mininet network...")
     topo = SwarmShieldTopo()
     net = Mininet(topo=topo, switch=OVSBridge, controller=None)
@@ -208,7 +195,7 @@ def run_demo(seed=None, speed=0.5):
 
     clear_all_rules(mn_hosts)
 
-    # --- Load RL agents ---
+    # loading RL agents
     print("Loading trained RL agents...")
     device = torch.device("cpu")
     ippo = IPPO(device)
@@ -222,11 +209,11 @@ def run_demo(seed=None, speed=0.5):
     ippo.load_all(checkpoint_dir)
     print(f"Loaded from {checkpoint_dir}")
 
-    # --- Create env ---
+    # create env
     env = SwarmShieldEnv(seed=seed)
     observations, infos = env.reset()
 
-    # Track containment state to detect changes
+    
     prev_blocked = set()
     prev_quarantined = set()
 
@@ -237,16 +224,16 @@ def run_demo(seed=None, speed=0.5):
     time.sleep(1)
 
     while not done:
-        # Agent decisions (deterministic = greedy, best action)
+        
         actions, _, _ = ippo.select_actions(observations)
 
-        # Step environment
+        # step environment
         observations, rewards, dones, truncateds, infos = env.step(actions)
 
         timestep += 1
         done = dones[0] or truncateds[0]
 
-        # --- Apply containment to Mininet ---
+        
         current_blocked = set()
         current_quarantined = set()
 
@@ -257,11 +244,11 @@ def run_demo(seed=None, speed=0.5):
             elif host_obj.is_blocked:
                 current_blocked.add(hid)
 
-        # Apply new quarantines
+        
         for hid in current_quarantined - prev_quarantined:
             apply_quarantine(mn_hosts[hid])
 
-        # Apply new blocks
+        
         for hid in current_blocked - prev_blocked:
             subnet_id = None
             for sid, hids in SUBNET_HOSTS.items():
@@ -271,18 +258,18 @@ def run_demo(seed=None, speed=0.5):
             if subnet_id is not None:
                 apply_block(mn_hosts[hid], subnet_id)
 
-        # Apply unblocks (was contained, now isn't)
+        
         for hid in (prev_blocked | prev_quarantined) - (current_blocked | current_quarantined):
             apply_unblock(mn_hosts[hid])
 
         prev_blocked = current_blocked
         prev_quarantined = current_quarantined
 
-        # --- Display ---
+       
         print_state(timestep, infos, actions, env)
         time.sleep(speed)
 
-    # --- End ---
+    
     time.sleep(2)
     clear_all_rules(mn_hosts)
     net.stop()
@@ -296,7 +283,7 @@ def run_demo(seed=None, speed=0.5):
 
 
 if __name__ == "__main__":
-    # Try different seeds to find a winning episode
+    
     seed = int(sys.argv[1]) if len(sys.argv) > 1 else None
     speed = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
 
