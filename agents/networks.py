@@ -1,29 +1,3 @@
-"""
-SwarmShield Neural Networks
-===========================
-
-Two simple MLPs:
-
-1. Actor (policy network)
-   Input : observation vector of length OBSERVATION_SIZE
-   Output: raw action logits of length NUM_ACTIONS
-
-2. Critic (value network)
-   Input : observation vector of length OBSERVATION_SIZE
-   Output: one scalar state-value estimate
-
-Current finalized environment:
-- OBSERVATION_SIZE = 77
-- NUM_ACTIONS = 22
-
-Architecture:
-OBS -> 128 -> 64 -> output
-with ReLU activations.
-
-We do NOT apply softmax inside the Actor.
-The PPO code will build a Categorical distribution from logits.
-"""
-
 import torch
 import torch.nn as nn
 
@@ -44,16 +18,6 @@ def _init_linear_layer(layer: nn.Linear, std: float = 1.0) -> None:
 
 
 class Actor(nn.Module):
-    """
-    Policy network.
-
-    Input:
-        shape (..., OBSERVATION_SIZE)
-
-    Output:
-        shape (..., NUM_ACTIONS)
-        raw logits, not probabilities
-    """
 
     def __init__(self):
         super().__init__()
@@ -78,16 +42,6 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    """
-    Value network.
-
-    Input:
-        shape (..., OBSERVATION_SIZE)
-
-    Output:
-        shape (..., 1)
-        scalar state value
-    """
 
     def __init__(self):
         super().__init__()
