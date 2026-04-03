@@ -1,20 +1,3 @@
-"""
-SwarmShield Network Topology
-============================
-
-This file defines the office network structure and the per-host state
-that persists across an episode.
-
-What belongs here:
-- Fixed topology (host identity, subnet membership, server host)
-- Mutable host state (infection, containment, vulnerability, timers)
-- Decayed long-memory suspicion features stored per host
-- Helper methods for topology queries
-- Canonical connection-success logic from the environment spec
-- Canonical containment-action application (including server no-op rules)
-- Win/loss related host-state queries
-"""
-
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -36,33 +19,10 @@ from env.config import (
 )
 
 
-# =============================================================================
-# RESULT OBJECTS
-# =============================================================================
-
 
 @dataclass(frozen=True)
 class ConnectionDecision:
-    """
-    Result of checking whether a connection attempt succeeds or fails
-    under the canonical containment rules.
-
-    success:
-        True if the connection completed.
-        False if containment blocked it.
-        Non-firewall failures (for example exploit failure after arrival)
-        are handled later by attacker/traffic code, not here.
-
-    reached_destination:
-        True if the packet reached the internal destination host.
-        This controls whether the destination gets an incoming record.
-
-    blocked_by_firewall:
-        True only when containment rules stopped the packet.
-
-    reason:
-        Short debug string describing what happened.
-    """
+    
 
     success: bool
     reached_destination: bool
@@ -72,17 +32,6 @@ class ConnectionDecision:
 
 @dataclass(frozen=True)
 class ContainmentActionResult:
-    """
-    Result of applying one containment action to one host.
-
-    This is used later by reward logic to decide whether the action was:
-    - a correct block
-    - a correct quarantine
-    - a quarantine upgrade
-    - a false positive
-    - a bad unblock
-    - or a no-op
-    """
 
     action: str
     host_id: int
@@ -93,10 +42,6 @@ class ContainmentActionResult:
     was_clean: bool
     noop_reason: Optional[str] = None
 
-
-# =============================================================================
-# HOST
-# =============================================================================
 
 
 class Host:
@@ -121,11 +66,6 @@ class Host:
     - decayed_unique_peers
     - decayed_incoming_scans
     - decayed_server_contacts
-
-    Important rule:
-    infection and containment are independent axes.
-    Infection never changes containment.
-    Only defender actions change containment.
     """
 
     def __init__(self, host_id: int):
@@ -145,17 +85,9 @@ class Host:
         self.decayed_incoming_scans = 0.0
         self.decayed_server_contacts = 0.0
 
-    # -------------------------------------------------------------------------
-    # Reset / lifecycle
-    # -------------------------------------------------------------------------
 
     def reset(self, rng) -> None:
-        """
-        Reset all mutable state for a fresh episode.
-
-        Regular hosts get a vulnerability in VULN_RANGE_REGULAR.
-        The file server is never a scan target, so its vulnerability is 0.
-        """
+        
         if self.is_server:
             self.vulnerability = 0.0
         else:
@@ -172,21 +104,14 @@ class Host:
         self.reset_long_memory()
 
     def reset_long_memory(self) -> None:
-        """Clear all four decayed long-memory counters."""
+        
         self.decayed_failed_outgoing = 0.0
         self.decayed_unique_peers = 0.0
         self.decayed_incoming_scans = 0.0
         self.decayed_server_contacts = 0.0
 
     def infect(self, current_timestep: int) -> bool:
-        """
-        Mark this host as infected.
-
-        Returns True only if the host changed from clean to infected.
-        Returns False if it was already infected.
-
-        Infection never changes containment.
-        """
+        
         if self.infected:
             return False
 
@@ -196,20 +121,15 @@ class Host:
         return True
 
     def infection_age(self, current_timestep: int) -> int:
-        """
-        Number of timesteps since infection.
-        Returns -1 if the host is not infected.
-        """
+        
         if not self.infected:
             return -1
         return current_timestep - self.timestep_infected
 
-    # -------------------------------------------------------------------------
-    # Long-memory suspicion counters
-    # -------------------------------------------------------------------------
+    
 
     def decay_long_memory(self, decay_factor: float = SUSPICIOUS_DECAY_FACTOR) -> None:
-        """Apply exponential decay to all four counters."""
+        
         self.decayed_failed_outgoing *= decay_factor
         self.decayed_unique_peers *= decay_factor
         self.decayed_incoming_scans *= decay_factor
@@ -227,10 +147,7 @@ class Host:
     def note_server_contact(self, amount: float = 1.0) -> None:
         self.decayed_server_contacts += amount
 
-    # -------------------------------------------------------------------------
-    # Low-level containment setters
-    # -------------------------------------------------------------------------
-
+   
     def _set_blocked(self) -> None:
         self.containment_state = CONTAINMENT_BLOCKED
 
@@ -240,9 +157,7 @@ class Host:
     def _set_uncontained(self) -> None:
         self.containment_state = CONTAINMENT_NONE
 
-    # -------------------------------------------------------------------------
-    # Read-only state helpers
-    # -------------------------------------------------------------------------
+   
 
     @property
     def is_clean(self) -> bool:
@@ -294,10 +209,6 @@ class Host:
             return "INFECTED"
         return "CLEAN"
 
-
-# =============================================================================
-# NETWORK
-# =============================================================================
 
 
 class Network:
