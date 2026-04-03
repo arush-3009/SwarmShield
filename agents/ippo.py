@@ -31,9 +31,7 @@ class IPPO:
     def select_actions(self, observations: Sequence):
         
         if len(observations) != self.num_agents:
-            raise ValueError(
-                f"Expected {self.num_agents} observations, got {len(observations)}"
-            )
+            raise ValueError(f"Expected {self.num_agents} observations, got {len(observations)}")
 
         actions = []
         log_probs = []
