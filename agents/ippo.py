@@ -9,7 +9,7 @@ There is no:
 - centralized critic
 - explicit communication
 
-Coordination can only emerge because:
+If coordination does emerge, it can only be because:
 - all agents act in the same environment
 - each agent sees the other agents' positions in its observation
 - the reward includes a large shared component
