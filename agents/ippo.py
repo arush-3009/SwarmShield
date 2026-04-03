@@ -23,19 +23,13 @@ from env.config import NUM_AGENTS
 
 
 class IPPO:
-    """
-    Manager for N independent PPO agents.
-    """
 
     def __init__(self, device):
         self.device = device
         self.num_agents = NUM_AGENTS
         self.agents: List[PPOAgent] = [PPOAgent(device) for _ in range(self.num_agents)]
 
-    # -------------------------------------------------------------------------
-    # Acting
-    # -------------------------------------------------------------------------
-
+    
     def select_actions(self, observations: Sequence):
         """
         Select one sampled action per agent.
@@ -84,9 +78,7 @@ class IPPO:
             actions.append(action)
         return actions
 
-    # -------------------------------------------------------------------------
-    # Storage
-    # -------------------------------------------------------------------------
+    
 
     def store_transitions(
         self,
@@ -98,9 +90,7 @@ class IPPO:
         values: Sequence[float],
     ) -> None:
         """
-        Store one timestep for all agents.
-
-        Each argument should be length NUM_AGENTS.
+        here, store one timestep for all agents.
         """
         if not (
             len(observations)
@@ -122,23 +112,10 @@ class IPPO:
                 dones[agent_idx],
                 values[agent_idx],
             )
-
-    # -------------------------------------------------------------------------
-    # Updating
-    # -------------------------------------------------------------------------
+            
 
     def update_all(self, last_observations: Sequence, last_dones: Sequence[bool] | None = None):
-        """
-        Run PPO update for all agents.
 
-        last_observations:
-            observations after the final collected step, one per agent.
-
-        last_dones:
-            optional done flags for those last observations.
-            If last_dones[i] is True, we bootstrap with 0.0 for agent i.
-            Otherwise we bootstrap from that agent's critic.
-        """
         if len(last_observations) != self.num_agents:
             raise ValueError(
                 f"Expected {self.num_agents} last observations, got {len(last_observations)}"
@@ -162,9 +139,6 @@ class IPPO:
 
         return all_stats
 
-    # -------------------------------------------------------------------------
-    # Save / load
-    # -------------------------------------------------------------------------
 
     def save_all(self, directory: str) -> None:
         os.makedirs(directory, exist_ok=True)
@@ -177,10 +151,6 @@ class IPPO:
         for agent_idx in range(self.num_agents):
             filepath = os.path.join(directory, f"agent_{agent_idx}.pt")
             self.agents[agent_idx].load(filepath)
-
-    # -------------------------------------------------------------------------
-    # Convenience helpers
-    # -------------------------------------------------------------------------
 
     def clear_all_buffers(self) -> None:
         for agent in self.agents:
