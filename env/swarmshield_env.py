@@ -102,30 +102,11 @@ class AgentRuntimeState:
 
 
 class SwarmShieldEnv:
-    """
-    Final multi-agent SwarmShield environment.
 
-    High-level step order:
-    1. Advance ongoing transit.
-    2. Process current agent actions.
-    3. Decay long-memory suspicion scores.
-    4. Run attacker.
-    5. Generate legitimate traffic.
-    6. Prune old traffic records.
-    7. Check termination.
-    8. Compute rewards.
-    9. Build observations.
-    """
-
-    # The spec does not define initial defender positions.
-    # These are stable defaults across 3 different subnets.
     DEFAULT_INITIAL_AGENT_POSITIONS = (0, 5, 12)
 
-    def __init__(
-        self,
-        seed: Optional[int] = None,
-        initial_agent_positions: Optional[Sequence[int]] = None,
-    ) -> None:
+    def __init__(self, seed: Optional[int] = None, initial_agent_positions: Optional[Sequence[int]] = None) -> None:
+        
         self.network = Network()
         self.traffic_manager = TrafficManager()
         self.attacker = Attacker()
@@ -139,24 +120,14 @@ class SwarmShieldEnv:
         self.current_timestep = 0
         self.done = False
 
-        # Cached step-level bookkeeping for infos/debugging.
         self.last_newly_infected: List[int] = []
         self.last_server_damage_delta = 0.0
         self.last_shared_reward = 0.0
         self.last_event_rewards = [0.0 for _ in range(NUM_AGENTS)]
 
-    # -------------------------------------------------------------------------
-    # Reset / Step
-    # -------------------------------------------------------------------------
-
+    
     def reset(self, seed: Optional[int] = None):
-        """
-        Reset the full environment.
-
-        Returns:
-        - observations: list of 3 np.ndarray, each shape (77,), dtype float32
-        - infos: list of 3 dicts
-        """
+    
         if seed is not None:
             self.rng = np.random.default_rng(seed)
 
@@ -172,7 +143,6 @@ class SwarmShieldEnv:
         self.last_shared_reward = 0.0
         self.last_event_rewards = [0.0 for _ in range(NUM_AGENTS)]
 
-        # Initial infection happens at reset per spec.
         self.network.seed_initial_infections(
             self.rng,
             INITIAL_INFECTIONS,
@@ -202,19 +172,7 @@ class SwarmShieldEnv:
         return observations, infos
 
     def step(self, actions: Sequence[int]):
-        """
-        Run one environment timestep.
-
-        Input:
-        - actions: sequence of 3 ints
-
-        Returns:
-        - observations: list[3] of np.ndarray shape (77,)
-        - rewards: list[3] of float
-        - terminated: list[3] of bool
-        - truncated: list[3] of bool
-        - infos: list[3] of dict
-        """
+        
         if self.done:
             raise RuntimeError(
                 "Cannot call step() on a finished episode. Call reset() first."
@@ -228,25 +186,23 @@ class SwarmShieldEnv:
         move_started = [False for _ in range(NUM_AGENTS)]
         arrived_this_step = [False for _ in range(NUM_AGENTS)]
 
-        # ---------------------------------------------------------------------
-        # 1) Advance ongoing transit first
-        # ---------------------------------------------------------------------
+        
+        # advance ongoing transit
         for agent_id, agent_state in enumerate(self.agent_states):
             if agent_state.in_transit:
                 agent_state.advance_transit()
                 if not agent_state.in_transit:
                     arrived_this_step[agent_id] = True
 
-        # ---------------------------------------------------------------------
-        # 2) Process agent actions
-        # ---------------------------------------------------------------------
+        
+        # process agent actions
+        
         for agent_id, action in enumerate(actions):
             agent_state = self.agent_states[agent_id]
 
             if agent_state.in_transit:
                 ignored_due_to_transit[agent_id] = True
                 continue
-
             reward, result, did_start_move = self._process_single_action(
                 agent_state=agent_state,
                 action=int(action),
@@ -255,14 +211,13 @@ class SwarmShieldEnv:
             action_results[agent_id] = result
             move_started[agent_id] = did_start_move
 
-        # ---------------------------------------------------------------------
-        # 3) Decay long-memory suspicion scores
-        # ---------------------------------------------------------------------
+        
+        #decay long-memory suspicion scores
         self.network.decay_all_long_memory()
 
-        # ---------------------------------------------------------------------
-        # 4) Run attacker
-        # ---------------------------------------------------------------------
+       
+        # run attacker
+       
         pre_damage = self.attacker.server_damage
         newly_infected = self.attacker.step(
             self.network,
@@ -273,36 +228,32 @@ class SwarmShieldEnv:
         self.last_newly_infected = list(newly_infected)
         self.last_server_damage_delta = self.attacker.server_damage - pre_damage
 
-        # ---------------------------------------------------------------------
-        # 5) Generate legitimate traffic
-        # ---------------------------------------------------------------------
+        
+        # generate legitimate traffic
+        
         self.traffic_manager.generate_normal_traffic(
             self.network,
             self.current_timestep,
             self.rng,
         )
 
-        # ---------------------------------------------------------------------
-        # 6) Prune old traffic records
-        # ---------------------------------------------------------------------
+        
+        # prune old traffic records
         self.traffic_manager.prune_old_records(self.current_timestep)
 
-        # ---------------------------------------------------------------------
-        # 7) Check termination / truncation
-        # ---------------------------------------------------------------------
+        
+        # check termination /truncation
         next_timestep = self.current_timestep + 1
 
         terminated = False
         truncated = False
         terminal_reward = 0.0
 
-        # If both ever somehow occur together, attacker win takes precedence.
-        if self.network.is_server_compromised(
-            self.attacker.server_damage,
-            SERVER_DAMAGE_THRESHOLD,
-        ):
+        
+        if self.network.is_server_compromised(self.attacker.server_damage, SERVER_DAMAGE_THRESHOLD):
             terminated = True
             terminal_reward = REWARD_SERVER_COMPROMISED
+            
         elif self.network.all_infections_quarantined():
             terminated = True
             terminal_reward = REWARD_ALL_QUARANTINED
@@ -310,28 +261,21 @@ class SwarmShieldEnv:
             truncated = True
             terminal_reward = REWARD_SURVIVED
 
-        # ---------------------------------------------------------------------
-        # 8) Compute rewards
-        # ---------------------------------------------------------------------
-        shared_reward = self._compute_shared_reward(
-            num_new_infections=len(newly_infected),
-            server_damage_delta=self.last_server_damage_delta,
-        )
+
+        #compute rewards
+        
+        shared_reward = self._compute_shared_reward(num_new_infections=len(newly_infected), server_damage_delta=self.last_server_damage_delta)
         self.last_shared_reward = shared_reward
 
-        rewards = [
-            float(shared_reward + local_event_rewards[i] + terminal_reward)
-            for i in range(NUM_AGENTS)
-        ]
+        rewards = [float(shared_reward + local_event_rewards[i] + terminal_reward) for i in range(NUM_AGENTS)]
         self.last_event_rewards = list(local_event_rewards)
 
-        # Update timestep after this step is fully accounted for.
+        # update timestep
         self.current_timestep = next_timestep
         self.done = terminated or truncated
 
-        # ---------------------------------------------------------------------
-        # 9) Build observations
-        # ---------------------------------------------------------------------
+        
+        # build observations
         observations = self._build_all_observations()
         terminated_list = [terminated for _ in range(NUM_AGENTS)]
         truncated_list = [truncated for _ in range(NUM_AGENTS)]
