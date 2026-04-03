@@ -49,10 +49,6 @@ class PPOAgent:
 
         self.clear_buffer()
 
-    # -------------------------------------------------------------------------
-    # Buffer management
-    # -------------------------------------------------------------------------
-
     def clear_buffer(self) -> None:
         self.buffer_obs: List[np.ndarray] = []
         self.buffer_actions: List[int] = []
@@ -64,10 +60,8 @@ class PPOAgent:
     def buffer_size(self) -> int:
         return len(self.buffer_obs)
 
-    # -------------------------------------------------------------------------
-    # Action selection
-    # -------------------------------------------------------------------------
 
+    #action selection
     def _obs_to_tensor(self, obs_numpy) -> torch.Tensor:
         obs_array = np.asarray(obs_numpy, dtype=np.float32)
         if obs_array.shape != (OBSERVATION_SIZE,):
@@ -121,9 +115,7 @@ class PPOAgent:
 
         return float(value.item())
 
-    # -------------------------------------------------------------------------
-    # Storage
-    # -------------------------------------------------------------------------
+    
 
     def store_transition(self, obs, action, log_prob, reward, done, value) -> None:
         self.buffer_obs.append(np.asarray(obs, dtype=np.float32))
@@ -133,9 +125,6 @@ class PPOAgent:
         self.buffer_dones.append(bool(done))
         self.buffer_values.append(float(value))
 
-    # -------------------------------------------------------------------------
-    # GAE
-    # -------------------------------------------------------------------------
 
     def compute_gae(self, last_value: float):
         """
@@ -173,10 +162,8 @@ class PPOAgent:
 
         return advantages, returns
 
-    # -------------------------------------------------------------------------
-    # PPO update
-    # -------------------------------------------------------------------------
 
+    #ppo update
     def update(self, last_value: float) -> Dict[str, float]:
         """
         Run one PPO update over the current buffer.
@@ -247,9 +234,7 @@ class PPOAgent:
                 batch_advantages = advantages_tensor[batch_indices]
                 batch_returns = returns_tensor[batch_indices]
 
-                # -----------------------------
-                # Actor update
-                # -----------------------------
+                
                 logits = self.actor(batch_obs)
                 dist = torch.distributions.Categorical(logits=logits)
 
@@ -273,9 +258,7 @@ class PPOAgent:
                 torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_norm=0.5)
                 self.actor_optimizer.step()
 
-                # -----------------------------
-                # Critic update
-                # -----------------------------
+                
                 predicted_values = self.critic(batch_obs).squeeze(-1)
                 critic_loss = F.mse_loss(predicted_values, batch_returns)
 
@@ -299,9 +282,7 @@ class PPOAgent:
         self.clear_buffer()
         return stats
 
-    # -------------------------------------------------------------------------
-    # Save / load
-    # -------------------------------------------------------------------------
+    
 
     def save(self, filepath: str) -> None:
         torch.save(
