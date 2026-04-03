@@ -40,9 +40,7 @@ class IPPO:
         values = []
 
         for agent_idx in range(self.num_agents):
-            action, log_prob, value = self.agents[agent_idx].select_action(
-                observations[agent_idx]
-            )
+            action, log_prob, value = self.agents[agent_idx].select_action(observations[agent_idx])
             actions.append(action)
             log_probs.append(log_prob)
             values.append(value)
