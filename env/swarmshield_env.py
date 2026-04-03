@@ -1,31 +1,3 @@
-"""
-SwarmShield Multi-Agent Environment
-===================================
-
-This is the top-level environment class used by IPPO training.
-
-It owns:
-- the Network (host state + containment logic)
-- the TrafficManager (traffic history + 16 traffic features)
-- the Attacker (scripted malicious behavior)
-- the 3 defender agent runtime states (positions + transit)
-
-Interface required by the project spec:
-- reset() -> list of 3 observations, list of 3 info dicts
-- step(actions) -> list of 3 observations, list of 3 rewards,
-                   list of 3 terminated, list of 3 truncated,
-                   list of 3 info dicts
-
-Design notes:
-- We do NOT subclass gym.Env here. The spec only requires reset/step with
-  per-agent lists, and keeping this plain makes it simpler for rushed training.
-- Movement transit is handled here, not in network.py.
-- The firewall / containment semantics are centralized in network.py.
-- Malicious traffic generation is centralized in attacker.py.
-- Legitimate traffic generation and traffic-feature computation are centralized
-  in traffic.py.
-"""
-
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -93,7 +65,7 @@ class AgentRuntimeState:
 
     current_host:
         The last host the agent is on / was on.
-        While in transit, we keep this at the last occupied host.
+        While in transit, this remains as the last occupied host.
 
     in_transit:
         True if the agent is currently moving and therefore blind.
@@ -117,14 +89,7 @@ class AgentRuntimeState:
         self.transit_remaining = travel_time
 
     def advance_transit(self) -> None:
-        """
-        Advance movement by one step-start tick.
-
-        This timing choice means:
-        - move with cost 1 -> current step's returned observation is blind,
-          then agent arrives at the start of next step and can act there.
-        - move with cost 2 -> two blind returned observations.
-        """
+    
         if not self.in_transit:
             return
 
