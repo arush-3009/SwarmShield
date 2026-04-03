@@ -214,15 +214,6 @@ class Host:
 class Network:
     """
     The full office network.
-
-    Responsibilities:
-    - own all Host objects
-    - provide topology helpers
-    - centralize containment action semantics
-    - centralize connection-success logic
-    - provide counts for rewards and observations
-    - seed initial infections
-    - decay host long-memory each timestep
     """
 
     def __init__(self):
@@ -230,9 +221,6 @@ class Network:
         for host_id in range(NUM_HOSTS):
             self.hosts.append(Host(host_id))
 
-    # -------------------------------------------------------------------------
-    # Basic access
-    # -------------------------------------------------------------------------
 
     def __len__(self) -> int:
         return len(self.hosts)
@@ -248,9 +236,6 @@ class Network:
         self._validate_internal_host_id(host_id)
         return self.hosts[host_id]
 
-    # -------------------------------------------------------------------------
-    # Validation helpers
-    # -------------------------------------------------------------------------
 
     def _validate_internal_host_id(self, host_id: int) -> None:
         if not (0 <= host_id < NUM_HOSTS):
@@ -268,15 +253,9 @@ class Network:
     def is_external_dest(self, dest_id: int) -> bool:
         return dest_id == EXTERNAL_C2_ID
 
-    # -------------------------------------------------------------------------
-    # Topology helpers
-    # -------------------------------------------------------------------------
 
     def are_same_subnet(self, host_a_id: int, host_b_id: int) -> bool:
-        """
-        True only if both are internal hosts in the same subnet.
-        External C2 is outside all subnets.
-        """
+    
         self._validate_internal_host_id(host_a_id)
 
         if self.is_external_dest(host_b_id):
@@ -335,10 +314,7 @@ class Network:
         return result
 
     def get_scan_target_ids_same_subnet(self, host_id: int) -> List[int]:
-        """
-        Same-subnet scan targets exclude self.
-        The file server cannot appear here because it is alone in subnet 5.
-        """
+    
         return self.get_same_subnet_host_ids(host_id, include_self=False)
 
     def get_scan_target_ids_cross_subnet(self, host_id: int) -> List[int]:
@@ -347,18 +323,9 @@ class Network:
         """
         return self.get_cross_subnet_host_ids(host_id, include_server=False)
 
-    # -------------------------------------------------------------------------
-    # Initial infection seeding
-    # -------------------------------------------------------------------------
 
     def seed_initial_infections(self, rng, num_infections: int, current_timestep: int = 0) -> List[int]:
-        """
-        Infect random regular (non-server) hosts at episode start.
-
-        Supports either:
-        - NumPy-style RNG with choice(..., replace=False)
-        - Python random.Random-style RNG with sample(...)
-        """
+    
         if num_infections < 1:
             raise ValueError(f"num_infections must be >= 1, got {num_infections}")
         if num_infections > len(REGULAR_HOST_IDS):
@@ -390,22 +357,9 @@ class Network:
 
         return newly_infected
 
-    # -------------------------------------------------------------------------
-    # Canonical connection-success logic
-    # -------------------------------------------------------------------------
 
     def decide_connection(self, source_id: int, dest_id: int) -> ConnectionDecision:
-        """
-        Apply the canonical Section 6 containment logic.
-
-        Order:
-        1. source quarantined -> fail
-        2. source blocked and dest is cross-subnet or external -> fail
-        3. external destination that passed sender checks -> success, no incoming record
-        4. internal destination quarantined -> fail
-        5. internal destination blocked and sender is cross-subnet -> fail
-        6. otherwise -> success
-        """
+        
         self._validate_internal_host_id(source_id)
         self._validate_dest_id(dest_id)
 
@@ -469,10 +423,7 @@ class Network:
             reason="success_internal",
         )
 
-    # -------------------------------------------------------------------------
-    # Canonical containment actions
-    # -------------------------------------------------------------------------
-
+   
     def apply_block(self, host_id: int) -> ContainmentActionResult:
         """
         Apply BLOCK to a host.
@@ -627,10 +578,7 @@ class Network:
             noop_reason=None,
         )
 
-    # -------------------------------------------------------------------------
-    # Infection / attack-phase queries
-    # -------------------------------------------------------------------------
-
+   
     def get_all_infected_hosts(self) -> List[Host]:
         result: List[Host] = []
         for host in self.hosts:
@@ -667,15 +615,10 @@ class Network:
         return count
 
     def count_active_uncontained_infections(self) -> int:
-        """
-        Alias with a name that matches the spec wording.
-        """
+        
         return self.count_infected_uncontained()
 
-    # -------------------------------------------------------------------------
-    # Win/loss checks
-    # -------------------------------------------------------------------------
-
+    
     def all_infections_quarantined(self) -> bool:
         """
         Defender win condition:
@@ -696,9 +639,7 @@ class Network:
     def is_server_compromised(self, server_damage: float, threshold: float) -> bool:
         return server_damage >= threshold
 
-    # -------------------------------------------------------------------------
-    # Counts for rewards / observations
-    # -------------------------------------------------------------------------
+    
 
     def count_by_status(self) -> Dict[str, int]:
         counts = {
@@ -741,17 +682,11 @@ class Network:
 
         return counts
 
-    # -------------------------------------------------------------------------
-    # Long-memory decay
-    # -------------------------------------------------------------------------
-
+   
     def decay_all_long_memory(self, decay_factor: float = SUSPICIOUS_DECAY_FACTOR) -> None:
         for host in self.hosts:
             host.decay_long_memory(decay_factor)
 
-    # -------------------------------------------------------------------------
-    # Debug formatting
-    # -------------------------------------------------------------------------
 
     def __str__(self) -> str:
         lines: List[str] = []
@@ -774,10 +709,6 @@ class Network:
 
         return "\n".join(lines)
 
-
-# =============================================================================
-# SANITY CHECKS
-# =============================================================================
 
 assert len(HOST_NAMES) == NUM_HOSTS
 assert len(SUBNET_NAMES) == NUM_SUBNETS
