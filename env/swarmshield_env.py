@@ -421,28 +421,17 @@ class SwarmShieldEnv:
         return observations
 
     def _build_observation_for_agent(self, agent_id: int) -> np.ndarray:
-        """
-        Build one 77-dim observation.
 
-        In-transit convention:
-        - traffic features 0-15 are zeroed
-        - self position remains at last occupied host
-        - self in-transit flag is 1
-        """
         obs = np.zeros(OBSERVATION_SIZE, dtype=np.float32)
         agent_state = self.agent_states[agent_id]
-
-        # 0-15: traffic features
+       
         if not agent_state.in_transit:
-            obs[:NUM_TRAFFIC_FEATURES] = self.traffic_manager.compute_features(
-                agent_state.current_host,
-                self.network,
-            )
+            obs[:NUM_TRAFFIC_FEATURES] = self.traffic_manager.compute_features(agent_state.current_host, self.network)
 
-        # 16-33: self position one-hot
+        
         obs[FEAT_SELF_POS_START + agent_state.current_host] = 1.0
 
-        # 34-69: other agent positions one-hot
+    
         other_ids = [i for i in range(NUM_AGENTS) if i != agent_id]
         other_1 = self.agent_states[other_ids[0]]
         other_2 = self.agent_states[other_ids[1]]
@@ -450,31 +439,21 @@ class SwarmShieldEnv:
         obs[FEAT_OTHER_AGENT_1_POS_START + other_1.current_host] = 1.0
         obs[FEAT_OTHER_AGENT_2_POS_START + other_2.current_host] = 1.0
 
-        # 70-76: global scalars / flags
+        
         counts = self.network.count_by_status()
+        
         obs[FEAT_FRACTION_QUARANTINED] = counts["quarantined_total"] / float(NUM_HOSTS)
         obs[FEAT_FRACTION_BLOCKED] = counts["blocked_total"] / float(NUM_HOSTS)
-        obs[FEAT_SERVER_DAMAGE] = (
-            self.attacker.server_damage / float(SERVER_DAMAGE_THRESHOLD)
-        )
-        obs[FEAT_EPISODE_PROGRESS] = min(
-            self.current_timestep / float(MAX_TIMESTEPS),
-            1.0,
-        )
+        obs[FEAT_SERVER_DAMAGE] = (self.attacker.server_damage / float(SERVER_DAMAGE_THRESHOLD))
+        obs[FEAT_EPISODE_PROGRESS] = min(self.current_timestep / float(MAX_TIMESTEPS), 1.0)
 
         current_host_obj = self.network.get_host(agent_state.current_host)
         obs[FEAT_CURRENT_HOST_BLOCKED] = 1.0 if current_host_obj.is_blocked else 0.0
-        obs[FEAT_CURRENT_HOST_QUARANTINED] = (
-            1.0 if current_host_obj.is_quarantined else 0.0
-        )
+        obs[FEAT_CURRENT_HOST_QUARANTINED] = (1.0 if current_host_obj.is_quarantined else 0.0)
         obs[FEAT_IN_TRANSIT] = 1.0 if agent_state.in_transit else 0.0
 
         np.clip(obs, 0.0, 1.0, out=obs)
         return obs
-
-    # -------------------------------------------------------------------------
-    # Info helpers
-    # -------------------------------------------------------------------------
 
     def _build_info_for_agent(
         self,
@@ -488,6 +467,8 @@ class SwarmShieldEnv:
         move_started: bool,
         arrived_this_step: bool,
     ) -> Dict[str, object]:
+        
+        
         agent_state = self.agent_states[agent_id]
         counts = self.network.count_by_status()
 
@@ -521,10 +502,7 @@ class SwarmShieldEnv:
             "quarantined_total": counts["quarantined_total"],
             "overlap_pairs": self._count_overlap_pairs(),
             "all_infections_quarantined": self.network.all_infections_quarantined(),
-            "server_compromised": self.network.is_server_compromised(
-                self.attacker.server_damage,
-                SERVER_DAMAGE_THRESHOLD,
-            ),
+            "server_compromised": self.network.is_server_compromised(self.attacker.server_damage, SERVER_DAMAGE_THRESHOLD)
         }
 
     def _serialize_action_result(self, action_result):
@@ -536,36 +514,30 @@ class SwarmShieldEnv:
             return dict(action_result.__dict__)
         return str(action_result)
 
-    # -------------------------------------------------------------------------
-    # Validation helpers
-    # -------------------------------------------------------------------------
 
     def _validate_actions(self, actions: Sequence[int]) -> None:
+        
         if len(actions) != NUM_AGENTS:
-            raise ValueError(
-                f"step(actions) expects {NUM_AGENTS} actions, got {len(actions)}"
-            )
+            raise ValueError(f"step(actions) expects {NUM_AGENTS} actions, got {len(actions)}")
 
         for action in actions:
             action_int = int(action)
             if not (0 <= action_int < NUM_ACTIONS):
-                raise ValueError(
-                    f"Each action must be in [0, {NUM_ACTIONS - 1}], got {action_int}"
-                )
+                raise ValueError(f"Each action must be in [0, {NUM_ACTIONS - 1}], got {action_int}")
 
-    def _validate_initial_agent_positions(
-        self,
-        positions: Optional[Sequence[int]],
-    ) -> Tuple[int, int, int]:
+    def _validate_initial_agent_positions(self, positions: Optional[Sequence[int]]) -> Tuple[int, int, int]:
+        
         if positions is None:
             positions = self.DEFAULT_INITIAL_AGENT_POSITIONS
 
         if len(positions) != NUM_AGENTS:
-            raise ValueError(
-                f"initial_agent_positions must have length {NUM_AGENTS}, got {len(positions)}"
-            )
-
-        pos_list = [int(x) for x in positions]
+            raise ValueError(f"initial_agent_positions must have length {NUM_AGENTS}, got {len(positions)}")
+        
+        pos_list = []
+        for x in positions:
+            pos = int(x)
+            pos_list.append(pos)
+        
         if len(set(pos_list)) != NUM_AGENTS:
             raise ValueError("initial_agent_positions must be unique")
 
