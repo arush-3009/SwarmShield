@@ -1,13 +1,13 @@
 let state = null;
 function connectSSE() {
     const src = new EventSource('/stream');
-    src.onmessage = function(ev) {
+    src.onmessage = function (ev) {
         const d = JSON.parse(ev.data);
         if (d.heartbeat) return;
         state = d;
         updateDashboard();
     };
-    src.onerror = function() { src.close(); setTimeout(connectSSE, 2000); };
+    src.onerror = function () { src.close(); setTimeout(connectSSE, 2000); };
 }
 function updateDashboard() {
     if (!state) return;
@@ -78,13 +78,13 @@ function buildLog() {
     div.innerHTML = html;
 }
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     const k = e.key;
-    if (k === ' ') { e.preventDefault(); post({action:'toggle_pause'}); }
-    if (k === 'r' || k === 'R') post({action:'restart'});
-    if (k === '+' || k === '=') post({action:'speed_up'});
-    if (k === '-' || k === '_') post({action:'speed_down'});
-    if (k === 'n' || k === 'N') post({action:'step'});
+    if (k === ' ') { e.preventDefault(); post({ action: 'toggle_pause' }); }
+    if (k === 'r' || k === 'R') post({ action: 'restart' });
+    if (k === '+' || k === '=') post({ action: 'speed_up' });
+    if (k === '-' || k === '_') post({ action: 'speed_down' });
+    if (k === 'n' || k === 'N') post({ action: 'step' });
 });
-function post(body) { fetch('/control', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+function post(body) { fetch('/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
 connectSSE();
