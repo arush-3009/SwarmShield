@@ -66,9 +66,6 @@ const AGENT_COLORS = [COLORS.agent0, COLORS.agent1, COLORS.agent2];
 const AGENT_NAMES = ["David Wallace", "Jan Gould", "Robert California"];
 const C2_POS = { x: 50, y: 2 };
 
-// =====================================================
-// CANVAS SETUP
-// =====================================================
 
 function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
@@ -98,10 +95,6 @@ function roundRect(x, y, w, h, r) {
     ctx.closePath();
 }
 
-// =====================================================
-// SSE + CONTROLS
-// =====================================================
-
 function connectSSE() {
     const src = new EventSource("/stream");
     src.onmessage = function (ev) {
@@ -127,9 +120,6 @@ function post(body) {
     fetch("/control", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 }
 
-// =====================================================
-// HUD UPDATE
-// =====================================================
 
 function updateHUD() {
     if (!state) return;
@@ -178,9 +168,6 @@ function updateHUD() {
     }
 }
 
-// =====================================================
-// EVENT EFFECTS
-// =====================================================
 
 function buildEventFx(nextState) {
     var events = nextState.events || [];
@@ -224,9 +211,7 @@ function drawEffects() {
     }
 }
 
-// =====================================================
-// DRAWING — BACKGROUND + ROOMS
-// =====================================================
+
 
 function drawBackground() {
     var grad = ctx.createRadialGradient(
@@ -253,7 +238,7 @@ function drawFloor() {
     ctx.fill();
     ctx.restore();
 
-    // Subtle carpet texture
+    
     ctx.fillStyle = COLORS.carpetAlt;
     for (var i = 0; i < 300; i++) {
         var px = x + ((i * 97) % Math.floor(w));
@@ -288,7 +273,7 @@ function drawRooms() {
     drawRoom(8, 66, 42, 88, "CONFERENCE ROOM", "#ddd4c6");
     drawRoom(86, 80, 98, 94, "SERVER", "#cec2ae");
 
-    // Dunder Mifflin sign
+    
     var sx = wx(32), sy = wy(7);
     ctx.fillStyle = "#285a99";
     roundRect(sx, sy, 160, 32, 4);
@@ -301,9 +286,7 @@ function drawRooms() {
     ctx.fillText("Paper Company Inc.", sx + 10, sy + 26);
 }
 
-// =====================================================
-// DRAWING — DESKS + HOSTS
-// =====================================================
+
 
 function drawDesk(cx, cy, isServer) {
     var x = wx(cx), y = wy(cy);
@@ -421,9 +404,7 @@ function drawHostGlow(hostId) {
     ctx.fillText(name, x, y + radius + 14);
 }
 
-// =====================================================
-// DRAWING — AGENTS
-// =====================================================
+
 
 function drawAgents() {
     if (!state || !state.agents) return;
@@ -486,14 +467,11 @@ function drawAgents() {
     }
 }
 
-// =====================================================
-// DRAWING — TRAFFIC LINES
-// =====================================================
 
 function drawTraffic() {
     if (!state || !state.traffic) return;
 
-    // Limit normal traffic lines to keep it readable
+    
     var normals = [];
     var malicious = [];
     for (var i = 0; i < state.traffic.length; i++) {
@@ -578,9 +556,6 @@ function withAlpha(hex, alpha) {
     return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
 }
 
-// =====================================================
-// OUTCOME OVERLAY
-// =====================================================
 
 function drawOutcome() {
     if (!state || !state.outcome) return;
@@ -613,9 +588,6 @@ function drawOutcome() {
     }
 }
 
-// =====================================================
-// MAIN RENDER LOOP
-// =====================================================
 
 function render() {
     animTick++;
@@ -633,7 +605,7 @@ function render() {
 
     drawTraffic();
 
-    // Draw host state glows
+    // host state glows
     for (var id2 in HOSTS) {
         drawHostGlow(parseInt(id2));
     }
