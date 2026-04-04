@@ -1,0 +1,342 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+    --bg: #201912;
+    --panel: rgba(24, 19, 15, 0.78);
+    --panel-border: rgba(235, 220, 195, 0.16);
+    --text: #f6efe4;
+    --muted: #ccbda7;
+    --gold: #d4b06a;
+    --clean: #37c36a;
+    --infected: #f44336;
+    --blocked: #ffad33;
+    --quarantined: #8ea0b6;
+    --normal: #63d6ff;
+    --c2: #c067ff;
+    --scan: #ff944d;
+    --lateral: #ff5c5c;
+    --attack: #ff1133;
+    --agent0: #ffd54a;
+    --agent1: #61a7ff;
+    --agent2: #ff6e7c;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 20% 20%, #3a2c1f 0%, #201912 52%, #130e0b 100%);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+}
+
+.floor-body {
+    position: relative;
+}
+
+#scene-wrap {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+}
+
+#floor-canvas {
+    margin-left: 270px;
+    position: absolute;
+    width: calc(100vw - 280px);
+    height: 100vh;
+    left: 0;
+    top: 0;
+    display: block;
+}
+
+#floor-hud {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.brand-card,
+.status-card,
+.mini-card,
+.agent-card,
+.legend-card,
+.ticker-card {
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 16px;
+}
+
+.brand-card {
+    padding: 18px 18px 16px;
+}
+
+.brand-small {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.28em;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.brand-title {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    color: var(--gold);
+    line-height: 1;
+}
+
+.brand-sub {
+    margin-top: 8px;
+    color: var(--text);
+    font-size: 14px;
+    opacity: 0.92;
+}
+
+.status-card,
+.agent-card,
+.legend-card,
+.ticker-card {
+    padding: 14px 16px;
+}
+
+.status-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.mini-card {
+    padding: 12px 10px;
+    text-align: center;
+}
+
+.hud-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.hud-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.hud-danger {
+    color: var(--infected);
+}
+
+.hud-warn {
+    color: var(--blocked);
+}
+
+.hud-cool {
+    color: var(--quarantined);
+}
+
+.server-bar-shell {
+    width: 100%;
+    height: 18px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#server-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ecc71, #8bc34a);
+    border-radius: inherit;
+    transition: width 0.45s ease, background 0.45s ease;
+}
+
+#server-bar-text {
+    margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.agent-line {
+    display: grid;
+    grid-template-columns: 18px 68px 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.agent-line:first-of-type {
+    border-top: none;
+}
+
+.agent-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.agent-0 {
+    color: var(--agent0);
+    background: var(--agent0);
+}
+
+.agent-1 {
+    color: var(--agent1);
+    background: var(--agent1);
+}
+
+.agent-2 {
+    color: var(--agent2);
+    background: var(--agent2);
+}
+
+.agent-name {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.agent-detail {
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    display: inline-block;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.swatch.normal {
+    color: var(--normal);
+    background: var(--normal);
+}
+
+.swatch.c2 {
+    color: var(--c2);
+    background: var(--c2);
+}
+
+.swatch.scan {
+    color: var(--scan);
+    background: var(--scan);
+}
+
+.swatch.lateral {
+    color: var(--lateral);
+    background: var(--lateral);
+}
+
+.swatch.attack {
+    color: var(--attack);
+    background: var(--attack);
+}
+
+.swatch.blocked {
+    color: var(--blocked);
+    background: var(--blocked);
+}
+
+.swatch.quarantined {
+    color: var(--quarantined);
+    background: var(--quarantined);
+}
+
+.swatch.infected {
+    color: var(--infected);
+    background: var(--infected);
+}
+
+#event-ribbon {
+    min-height: 48px;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.event-badge {
+    display: inline-block;
+    margin-right: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.badge-alert {
+    background: rgba(244, 67, 54, 0.2);
+    color: #ffb3ad;
+}
+
+.badge-warn {
+    background: rgba(255, 173, 51, 0.2);
+    color: #ffd59a;
+}
+
+.badge-cool {
+    background: rgba(142, 160, 182, 0.2);
+    color: #d2dbe6;
+}
+
+.badge-move {
+    background: rgba(97, 167, 255, 0.18);
+    color: #cae3ff;
+}
+
+#controls-hint {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 20;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(24, 19, 15, 0.75);
+    border: 1px solid rgba(235, 220, 195, 0.12);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.04em;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    pointer-events: none;
+}
