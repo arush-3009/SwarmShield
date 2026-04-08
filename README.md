@@ -54,7 +54,7 @@ Run all commands from the repo root.
 ### 1. Clone the repo
 
 ```bash
-git clone <your-repo-url>
+git clone <https://github.com/arush-3009/SwarmShield>
 cd SwarmShield
 ```
 
