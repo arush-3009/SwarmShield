@@ -320,7 +320,7 @@ Server damage reaches 300.0.
 
 ```text
 + 0.03 × number of clean hosts
-- 1.50 × number of infected+uncontained hosts
+- 2.50 × number of infected+uncontained hosts
 - 0.50 × number of infected+blocked hosts
 - 0.00 × number of infected+quarantined hosts
 - 0.30 × number of clean+blocked hosts
@@ -334,16 +334,16 @@ Server damage reaches 300.0.
 
 | Event | Reward |
 |---|---|
-| Correct block (infected+uncontained → blocked) | +4.0 |
-| Correct quarantine (infected+uncontained → quarantined) | +10.0 |
-| Quarantine upgrade (infected+blocked → quarantined) | +4.0 |
-| False block (clean+uncontained → blocked) | -3.0 |
-| False quarantine (clean+uncontained → quarantined) | -6.0 |
-| False quarantine upgrade (clean+blocked → quarantined) | -3.0 |
+| Correct block (infected+uncontained → blocked) | +6.0 |
+| Correct quarantine (infected+uncontained → quarantined) | +15.0 |
+| Quarantine upgrade (infected+blocked → quarantined) | +6.0 |
+| False block (clean+uncontained → blocked) | -2.0 |
+| False quarantine (clean+uncontained → quarantined) | -4.0 |
+| False quarantine upgrade (clean+blocked → quarantined) | -2.0 |
 | Correct unblock (clean+contained → uncontained) | +1.5 |
 | Bad unblock (infected+contained → uncontained) | -4.0 |
-| Move within subnet | -0.1 |
-| Move across subnet | -0.25 |
+| Move within subnet | -0.05 |
+| Move across subnet | -0.12 |
 
 ### 15.3 No-Ops (zero reward, no state change)
 
@@ -360,7 +360,7 @@ Server damage reaches 300.0.
 | Outcome | Reward |
 |---|---|
 | Server compromised | -40.0 |
-| All infected hosts quarantined | +25.0 |
+| All infected hosts quarantined | +40.0 |
 | Survived to time limit | 0.0 |
 
 
@@ -432,7 +432,7 @@ Actions:
 
 Rewards:
   REWARD_HEALTHY_HOST = 0.03
-  REWARD_INFECTED_UNCONTAINED = -1.50
+  REWARD_INFECTED_UNCONTAINED = -2.50
   REWARD_INFECTED_BLOCKED = -0.50
   REWARD_INFECTED_QUARANTINED = 0.00
   REWARD_FALSE_BLOCK_PER_STEP = -0.30
@@ -440,18 +440,18 @@ Rewards:
   REWARD_AGENT_OVERLAP = -0.10
   REWARD_NEW_INFECTION = -6.00
   REWARD_SERVER_DAMAGE = -0.25
-  REWARD_CORRECT_BLOCK = 4.00
-  REWARD_CORRECT_QUARANTINE = 10.00
-  REWARD_QUARANTINE_UPGRADE = 4.00
-  REWARD_FALSE_BLOCK = -3.00
-  REWARD_FALSE_QUARANTINE = -6.00
-  REWARD_FALSE_QUARANTINE_UPGRADE = -3.00
+  REWARD_CORRECT_BLOCK = 6.00
+  REWARD_CORRECT_QUARANTINE = 15.00
+  REWARD_QUARANTINE_UPGRADE = 6.00
+  REWARD_FALSE_BLOCK = -2.00
+  REWARD_FALSE_QUARANTINE = -4.00
+  REWARD_FALSE_QUARANTINE_UPGRADE = -2.00
   REWARD_CORRECT_UNBLOCK = 1.50
   REWARD_BAD_UNBLOCK = -4.00
-  REWARD_MOVE_WITHIN_SUBNET = -0.10
-  REWARD_MOVE_ACROSS_SUBNET = -0.25
+  REWARD_MOVE_WITHIN_SUBNET = -0.05
+  REWARD_MOVE_CROSS_SUBNET = -0.12
   REWARD_SERVER_COMPROMISED = -40.00
-  REWARD_ALL_QUARANTINED = 25.00
+  REWARD_ALL_QUARANTINED = 40.00
   REWARD_SURVIVED = 0.00
 
 PPO:
