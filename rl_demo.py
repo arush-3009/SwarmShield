@@ -16,7 +16,9 @@ import sys
 import os
 import time
 
-sys.path.insert(0, os.path.expanduser("~/swarmshield-rl"))
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 import torch
 import numpy as np
@@ -200,11 +202,11 @@ def run_demo(seed=None, speed=0.5):
     device = torch.device("cpu")
     ippo = IPPO(device)
 
-    checkpoint_dir = os.path.expanduser("~/swarmshield-rl/checkpoints/best")
+    checkpoint_dir = os.path.join(PROJECT_ROOT, "checkpoints", "best")
     if not os.path.exists(os.path.join(checkpoint_dir, "agent_0.pt")):
-        checkpoint_dir = os.path.expanduser("~/swarmshield-rl/checkpoints/latest")
+        checkpoint_dir = os.path.join(PROJECT_ROOT, "checkpoints", "latest")
     if not os.path.exists(os.path.join(checkpoint_dir, "agent_0.pt")):
-        checkpoint_dir = os.path.expanduser("~/swarmshield-rl/checkpoints")
+        checkpoint_dir = os.path.join(PROJECT_ROOT, "checkpoints")
 
     ippo.load_all(checkpoint_dir)
     print(f"Loaded from {checkpoint_dir}")

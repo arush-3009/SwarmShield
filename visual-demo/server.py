@@ -2,8 +2,11 @@ import argparse, json, os, sys, threading, time, datetime, re
 from queue import Queue, Empty
 from flask import Flask, render_template, Response, request, jsonify
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+VISUAL_DEMO_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(VISUAL_DEMO_DIR, '..'))
+
+sys.path.insert(0, VISUAL_DEMO_DIR)
+sys.path.insert(0, PROJECT_ROOT)
 from engine import EvalEngine
 
 from env.config import (SUBNET_HOSTS, NUM_HOSTS, HOST_NAMES)
@@ -11,7 +14,7 @@ from env.config import (SUBNET_HOSTS, NUM_HOSTS, HOST_NAMES)
 mn_net = None
 mn_hosts = {}
 mn_enabled = False
-MN_CMD_LOG = os.path.expanduser("~/swarmshield-rl/mininet_commands.log")
+MN_CMD_LOG = os.path.join(PROJECT_ROOT, "mininet_commands.log")
 
 RED = "\033[91m"
 GREEN = "\033[92m"

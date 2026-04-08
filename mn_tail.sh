@@ -1,7 +1,10 @@
 #!/bin/bash
 # Shows Mininet iptables commands in real time
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="$SCRIPT_DIR/mininet_commands.log"
+
 echo "=========================================="
 echo "  MININET CLI — LIVE IPTABLES COMMANDS"
 echo "=========================================="
 echo ""
-tail -f ~/swarmshield-rl/mininet_commands.log
+tail -f "$LOG_FILE"
