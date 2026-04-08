@@ -27,7 +27,7 @@ RESET = "\033[0m"
 DIM = "\033[2m"
 
 SUBNET_NAMES = ["Sales", "Accounting", "BackDesks", "Management", "Conference", "ServerCloset"]
-AGENT_NAMES = ["Dwight", "Jim", "Michael"]
+AGENT_NAMES = ["David Wallace", "Jan Gould", "Robert California"]
 
 def mn_log(msg):
     print("  " + DIM + "[mininet]" + RESET + " " + msg)

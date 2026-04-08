@@ -21,7 +21,7 @@ ACTION_NAMES = {
     ACTION_QUARANTINE: "QUARANTINE",
     ACTION_UNBLOCK: "UNBLOCK",
 }
-AGENT_NAMES = ["Dwight", "Jim", "Michael"]
+AGENT_NAMES = ["David Wallace", "Jan Gould", "Robert California"]
 
 def action_to_string(action):
     if action in ACTION_NAMES:
