@@ -105,6 +105,17 @@ class EvalEngine:
                 self.prev_infected.add(h.host_id)
         return state
 
+    def _traffic_type_for_record(self, rec):
+        if not rec.is_malicious:
+            return 'normal'
+        if rec.dest_id == -1:
+            return 'c2_beacon'
+        if rec.dest_id == SERVER_HOST_ID:
+            return 'server_attack'
+        if rec.bytes_sent < 200:
+            return 'scan'
+        return 'lateral'
+
     def _build_state(self, actions, rewards, infos):
         hosts = []
         for h in self.env.network.hosts:
@@ -134,15 +145,8 @@ class EvalEngine:
         ts = self.env.current_timestep - 1 if self.env.current_timestep > 0 else 0
         for host_id in range(NUM_HOSTS):
             for rec in self.env.traffic_manager.outgoing_history[host_id]:
-                if rec.timestamp == ts and rec.is_malicious:
-                    if rec.dest_id == -1:
-                        ttype = 'c2_beacon'
-                    elif rec.dest_id == SERVER_HOST_ID:
-                        ttype = 'server_attack'
-                    elif rec.bytes_sent < 200:
-                        ttype = 'scan'
-                    else:
-                        ttype = 'lateral'
+                if rec.timestamp == ts:
+                    ttype = self._traffic_type_for_record(rec)
                     traffic.append({
                         'src': rec.source_id, 'dst': rec.dest_id,
                         'type': ttype, 'success': rec.success, 'bytes': rec.bytes_sent,
