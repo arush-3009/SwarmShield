@@ -10,6 +10,9 @@ The project combines:
 - a browser-based visual demo
 - an optional Mininet-backed Linux demo that mirrors containment actions as real `iptables` rules
 
+
+![SwarmShield DEMO Preview](demo-photo.png)
+
 ## What This Repo Contains
 
 - `env/`
